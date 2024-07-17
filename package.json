@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "jsdom": "^24.1.0",
+    "mocha": "^10.6.0",
+    "puppeteer": "^22.13.0"
+  },
+  "devDependencies": {
+    "chai": "^5.1.1"
+  },
+  "name": "grabber",
+  "version": "1.0.0",
+  "main": "launchOptions.js",
+  "scripts": {
+    "test": "mocha --timeout 30000 --reporter=list './Chapter 3/*.test.js'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module"
+}
