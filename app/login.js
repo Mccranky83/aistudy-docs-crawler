@@ -23,6 +23,5 @@ export default async () => {
   // Submit
   await loginPageModel.click("#btn_submit");
 
-  // await page.close();
-  // await browser.close();
+  return { browser, page };
 };

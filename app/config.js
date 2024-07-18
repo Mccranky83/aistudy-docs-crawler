@@ -3,7 +3,7 @@ import fs from "fs";
 export default {
   local: {
     baseUrl: "https://sz-api.ai-study.net/home.html",
-    timeout: 2000,
+    timeout: 1000,
     credentials: {
       username: "LS2020000101",
       password: "SHedu@21297888",

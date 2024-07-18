@@ -1,5 +1,5 @@
 import login from "./login.js";
 
 (async () => {
-  login();
+  const { browser, page } = await login();
 })();
