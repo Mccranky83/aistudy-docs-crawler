@@ -12,9 +12,11 @@ export default class PageModel {
   }
 
   async wait(selector) {
+    const element = await this.page.waitForSelector(selector);
     console.log(
-      `${await (await this.page.waitForSelector(selector)).evaluate((e) => e.innerText || "Component")} successfully loaded...`,
+      `${await element.evaluate((e) => e.innerText || "Component")} successfully loaded...`,
     );
+    return element;
   }
 
   async go() {
@@ -24,8 +26,24 @@ export default class PageModel {
     ]);
   }
 
+  async position(selector) {
+    const element = await this.wait(selector);
+    const { x, y, width, height } = await element.boundingBox();
+    return {
+      x: x + width / 2,
+      y: y + height / 2,
+      width,
+      height,
+    };
+  }
+
   async click(selector) {
     await this.wait(selector);
     await this.page.click(selector, this.config.clickOptions);
+  }
+
+  async mouseClick(selector) {
+    const { x, y } = await this.position(selector);
+    await page.mouse.click(x, y);
   }
 }

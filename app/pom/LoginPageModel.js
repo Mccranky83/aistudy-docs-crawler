@@ -1,6 +1,6 @@
-import GeneralPageModel from "./GeneralPageModel.js";
+import GenericPageModel from "./GenericPageModel.js";
 
-export default class LoginPageModel extends GeneralPageModel {
+export default class LoginPageModel extends GenericPageModel {
   constructor(page, config) {
     super(page, config);
   }
@@ -14,20 +14,13 @@ export default class LoginPageModel extends GeneralPageModel {
   }
 
   async slideToUnlock() {
-    await this.wait("#lable");
-    const lable = await this.page.$("#lable");
-    const box = await lable.boundingBox();
+    const lablePos = await this.position("#lable");
+    const sliderPos = await this.position("#slider");
 
-    await this.wait("#slider");
-    const slider = await this.page.$("#slider");
-    const slider_box = await slider.boundingBox();
+    const initPosition = lablePos;
 
-    const initPosition = {
-      x: box.x + box.width / 2,
-      y: box.y,
-    };
     const finalPosition = {
-      x: initPosition.x + slider_box.width,
+      x: initPosition.x + sliderPos.width,
       y: initPosition.y,
     };
 
