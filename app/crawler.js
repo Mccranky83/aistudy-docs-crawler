@@ -1,5 +1,5 @@
-import login from "./login.js";
+import navigate from "./navigate.js";
 
 (async () => {
-  const { browser, page } = await login();
+  const { browser, page, pageModel } = await navigate();
 })();

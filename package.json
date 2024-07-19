@@ -9,7 +9,6 @@
   },
   "name": "grabber",
   "version": "1.0.0",
-  "main": "launchOptions.js",
   "scripts": {
     "start": "node ./app/crawler.js"
   },

@@ -37,13 +37,21 @@ export default class PageModel {
     };
   }
 
-  async click(selector) {
+  async click(selector, options) {
     await this.wait(selector);
-    await this.page.click(selector, this.config.clickOptions);
+    await this.page.click(
+      selector,
+      Object.assign({}, this.config.clickOptions, options),
+    );
   }
 
-  async mouseClick(selector) {
+  async mouseClick(selector, options) {
+    await this.wait(selector);
     const { x, y } = await this.position(selector);
-    await page.mouse.click(x, y);
+    await this.page.mouse.click(
+      x,
+      y,
+      Object.assign({}, this.config.clickOptions, options),
+    );
   }
 }

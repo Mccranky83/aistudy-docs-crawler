@@ -20,8 +20,7 @@ export default async () => {
   // Slide to unlock
   await loginPageModel.slideToUnlock();
 
-  // Submit
-  await loginPageModel.click("#btn_submit");
+  console.log("This ends the login phase...\n");
 
-  return { browser, page };
+  return { browser, page, loginPageModel };
 };

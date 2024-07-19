@@ -12,6 +12,12 @@ export default {
       headless: false,
       product: "chrome",
       userDataDir: `${fs.mkdtempSync("./profiles/profile_")}`,
+      defaultViewport: {
+        width: 1440,
+        height: 900,
+        isMobile: false,
+        hasTouch: false,
+      },
     },
     gotoOptions: { waitUntil: "load" },
     clickOptions: {
