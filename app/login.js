@@ -7,7 +7,11 @@ export default async () => {
   const page = await browser.newPage();
   const loginPageModel = new LoginPageModel(page, config);
 
-  await loginPageModel.go();
+  const waitForFullRender = new Promise((res) => {
+    setTimeout(res, config.timeout);
+  });
+  loginPageModel.go();
+  await waitForFullRender;
 
   // Hit login button
   await loginPageModel.click("xpath/.//a[text()='登录']");

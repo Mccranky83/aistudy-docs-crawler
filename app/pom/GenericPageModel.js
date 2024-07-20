@@ -20,10 +20,7 @@ export default class PageModel {
   }
 
   async go() {
-    await Promise.all([
-      this.page.goto(this.config.baseUrl, this.config.gotoOptions),
-      this.timeout(1),
-    ]);
+    await this.page.goto(this.config.baseUrl, this.config.gotoOptions);
   }
 
   async position(selector) {
@@ -52,6 +49,26 @@ export default class PageModel {
       x,
       y,
       Object.assign({}, this.config.clickOptions, options),
+    );
+  }
+
+  async navigateDropdown(number) {
+    await Promise.all(
+      [...Array(number + 1)].map((_, i) =>
+        i != number
+          ? new Promise((res) => {
+              setTimeout(() => {
+                this.page.keyboard.press("ArrowDown");
+                res();
+              }, i * 10);
+            })
+          : new Promise((res) => {
+              setTimeout(() => {
+                this.page.keyboard.press("Enter");
+                res();
+              }, i * 10);
+            }),
+      ),
     );
   }
 }

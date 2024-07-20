@@ -6,14 +6,14 @@ export default async () => {
   const { browser, page, loginPageModel } = await login();
   const pageModel = new GenericPageModel(page, config);
 
-  // Check if new page has finished loading
-  const waitForHomePage = new Promise((res) => {
+  const waitForButtonToRender = new Promise((res) => {
     page.on("response", (r) => {
-      if (r.request().resourceType() == "image") res(r);
+      if (r.request().resourceType() == "script") res();
     });
   });
-  await loginPageModel.click("#btn_submit"); // Submit
-  await waitForHomePage;
+
+  loginPageModel.click("#btn_submit"); // Submit
+  await waitForButtonToRender;
 
   await pageModel.mouseClick("xpath/.//img[@src='common/i/icon-bkzs.jpg']");
 
@@ -38,16 +38,9 @@ export default async () => {
   );
   await dropdownMenu.click();
 
-  // Move on with new institution
-  await Promise.all([
-    newPage.keyboard.press("ArrowDown"),
-    new Promise((res) => {
-      setTimeout(() => {
-        newPage.keyboard.press("Enter");
-        res();
-      }, 300);
-    }),
-  ]);
+  // Navigate the dropdown menu (2 item down)
+  await newPageModel.navigateDropdown(2);
+
   await newPageModel
     .mouseClick("xpath/.//label[contains(@title, '选择注册机构')]")
     .then(async () => {
@@ -56,5 +49,5 @@ export default async () => {
 
   console.log("This ends the navigation phase...\n");
 
-  return { browser, page: newPage, pageModel: newPageModel };
+  return { browser, page: newPage };
 };
