@@ -25,9 +25,9 @@ export default {
       clickCount: 1,
       delay: 100,
     },
-    menuOptions: {
-      reselect: "xpath/.//span[text()='重选课时']",
-      confirm: "xpath/.//span[contains(text(), '确 定')]/..",
+    customOptions: {
+      visible: false,
+      number: 0,
     },
   },
 }[process.env.TESTENV || "local"];

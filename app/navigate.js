@@ -1,10 +1,10 @@
 import login from "./login.js";
-import GenericPageModel from "./pom/GenericPageModel.js";
+import MenuPageModel from "./pom/MenuPageModel.js";
 import config from "./config.js";
 
 export default async () => {
   const { browser, page, loginPageModel } = await login();
-  const pageModel = new GenericPageModel(page, config);
+  const pageModel = new MenuPageModel(page, config);
 
   const waitForButtonToRender = new Promise((res) => {
     page.on("response", (r) => {
@@ -15,7 +15,11 @@ export default async () => {
   loginPageModel.click("#btn_submit"); // Submit
   await waitForButtonToRender;
 
-  await pageModel.mouseClick("xpath/.//img[@src='common/i/icon-bkzs.jpg']");
+  await pageModel.mouseClick(
+    "xpath/.//img[@src='common/i/icon-bkzs.jpg']",
+    null,
+    config.customOptions,
+  );
 
   // Subject Menu
   const subjects = await page.$$(
@@ -32,14 +36,11 @@ export default async () => {
     await subjects[0].click(),
   ]);
 
-  const newPageModel = new GenericPageModel(newPage, config);
-  const dropdownMenu = await newPageModel.wait(
-    ".ant-select-selection-selected-value",
-  );
-  await dropdownMenu.click();
+  const newPageModel = new MenuPageModel(newPage, config);
+  await newPageModel.selectMenu(".ant-select-selection-selected-value");
 
-  // Navigate the dropdown menu (2 item down)
-  await newPageModel.navigateDropdown(2);
+  // Navigate the dropdown menu
+  await newPageModel.navigateDropdown(1);
 
   await newPageModel
     .mouseClick("xpath/.//label[contains(@title, '选择注册机构')]")
@@ -47,7 +48,7 @@ export default async () => {
       await newPageModel.click("button", { clickCount: 2 });
     });
 
-  console.log("This ends the navigation phase...\n");
+  console.log("\nThis ends the navigation phase...\n");
 
   return { browser, page: newPage };
 };

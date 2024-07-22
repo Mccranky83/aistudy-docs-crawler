@@ -11,10 +11,22 @@ export default class PageModel {
     });
   }
 
-  async wait(selector) {
-    const element = await this.page.waitForSelector(selector);
+  async wait(selector, customOptions) {
+    const waitOptions = { ...this.config.customOptions, ...customOptions };
+    await this.page.waitForSelector(selector, {
+      visible: waitOptions.visible,
+    });
+    const element = (await this.page.$$(selector))[waitOptions.number];
     console.log(
-      `${await element.evaluate((e) => e.innerText || "Component")} successfully loaded...`,
+      JSON.stringify(
+        {
+          ...waitOptions,
+          handlerName: `${await element.evaluate((e) => e.innerText || "Component")}`,
+        },
+        null,
+        2,
+      ),
+      `successfully loaded...`,
     );
     return element;
   }
@@ -23,8 +35,8 @@ export default class PageModel {
     await this.page.goto(this.config.baseUrl, this.config.gotoOptions);
   }
 
-  async position(selector) {
-    const element = await this.wait(selector);
+  async position(selector, customOptions) {
+    const element = await this.wait(selector, customOptions);
     const { x, y, width, height } = await element.boundingBox();
     return {
       x: x + width / 2,
@@ -34,17 +46,15 @@ export default class PageModel {
     };
   }
 
-  async click(selector, options) {
-    await this.wait(selector);
-    await this.page.click(
-      selector,
-      Object.assign({}, this.config.clickOptions, options),
-    );
+  async click(selector, options, customOptions) {
+    const element = await this.wait(selector, customOptions);
+    await element.click({ ...this.config.clickOptions, options });
+    return element;
   }
 
-  async mouseClick(selector, options) {
-    await this.wait(selector);
-    const { x, y } = await this.position(selector);
+  async mouseClick(selector, options, customOptions) {
+    await this.wait(selector, customOptions);
+    const { x, y } = await this.position(selector, customOptions);
     await this.page.mouse.click(
       x,
       y,
@@ -52,7 +62,7 @@ export default class PageModel {
     );
   }
 
-  async navigateDropdown(number) {
+  async navigateDropdown(number /* type: positive integer */) {
     await Promise.all(
       [...Array(number + 1)].map((_, i) =>
         i != number

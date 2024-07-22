@@ -8,7 +8,7 @@ export default class LoginPageModel extends GenericPageModel {
   async inputCredentials() {
     let credentials = this.config.credentials;
     for (const i in credentials) {
-      await this.wait(`#${i}`);
+      await this.wait(`#${i}`, { ...this.config.customOptions });
       await this.page.type(`#${i}`, `${credentials[i]}`, { delay: 50 });
     }
   }

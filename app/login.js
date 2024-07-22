@@ -8,23 +8,26 @@ export default async () => {
   const loginPageModel = new LoginPageModel(page, config);
 
   const waitForFullRender = new Promise((res) => {
-    setTimeout(res, config.timeout);
+    page.on("load", res);
   });
   loginPageModel.go();
   await waitForFullRender;
 
-  // Hit login button
-  await loginPageModel.click("xpath/.//a[text()='登录']");
+  // Hit the login button
+  await loginPageModel.click("xpath/.//a[text()='登录']", null, {
+    visible: true,
+  });
 
   // Faculty entrance
-  await loginPageModel.click("#tab1");
+  await loginPageModel.click("#tab1", null, {
+    ...config.customOptions,
+    visible: true,
+  });
 
   await loginPageModel.inputCredentials();
-
-  // Slide to unlock
   await loginPageModel.slideToUnlock();
 
-  console.log("This ends the login phase...\n");
+  console.log("\nThis ends the login phase...\n");
 
   return { browser, page, loginPageModel };
 };
