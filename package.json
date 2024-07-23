@@ -1,13 +1,5 @@
 {
-  "dependencies": {
-    "jsdom": "^24.1.0",
-    "mocha": "^10.6.0",
-    "puppeteer": "^22.13.0"
-  },
-  "devDependencies": {
-    "chai": "^5.1.1"
-  },
-  "name": "grabber",
+  "name": "aistudy-docs-crawler",
   "version": "1.0.0",
   "scripts": {
     "start": "node ./app/crawler.js"
@@ -16,5 +8,13 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "jsdom": "^24.1.0",
+    "mocha": "^10.6.0",
+    "puppeteer": "^22.13.0"
+  },
+  "devDependencies": {
+    "chai": "^5.1.1"
+  }
 }
