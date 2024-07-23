@@ -71,4 +71,80 @@ export default class MenuPageModel extends GenericPageModel {
     await Promise.all([this.search(), this.timeout()]);
     await this.click("xpath/.//*[text()[contains(.,'共享课程')]]");
   }
+
+  async populateMapWithUnits() {
+    let sitemap = {};
+    const sidebar = await this.page.$(
+      "xpath/.//div[@class='ant-layout-sider-children']",
+    );
+    const sidebarItems = await sidebar.$$(
+      "xpath/.//div[@class[contains(.,'ant-collapse-item')]]",
+    );
+    const promise = await Promise.all(
+      sidebarItems.map((cur, i) => {
+        return new Promise((res) => {
+          setTimeout(async () => {
+            const outerHTML = await cur.evaluate((e) => e.outerHTML);
+            if (outerHTML.includes("active") == false) await cur.click();
+
+            await cur.waitForSelector("xpath/.//*[@class='ant-tag']", {
+              visible: true,
+            });
+            const unitHandles = await cur.$$(
+              "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]",
+            );
+
+            const unitNames = await Promise.all(
+              unitHandles.map(async (cur) => {
+                return await (
+                  await cur.$("xpath/.//ancestor::div[@class='unit-title']")
+                ).evaluate((e) => e.innerText.split(":")[1]);
+              }),
+            );
+
+            // print each handle to console
+            //
+            /* await Promise.all(
+              unitHandles.map((cur, i) => {
+                return new Promise((res) => {
+                  setTimeout(
+                    async () => {
+                      console.log(await cur.evaluate((e) => e.innerText));
+                      res();
+                    },
+                    (i + 1) * 50,
+                  );
+                });
+              }),
+            ); */
+
+            const gradeNames = (
+              await Promise.all(
+                unitHandles.map((cur) => cur.evaluate((e) => e.innerText)),
+              )
+            ).filter((cur, i, self) => {
+              return self.slice(i + 1).find((n) => n === cur) ? false : true;
+            });
+
+            gradeNames.forEach((grade) => {
+              Object.assign(sitemap, {
+                [grade]: { unitHandles: [], unitNames: [] },
+              });
+            });
+
+            for (const gradeName of gradeNames) {
+              unitHandles.forEach((cur) => {
+                sitemap[gradeName].unitHandles.push(cur);
+              });
+              unitNames.forEach((cur) => {
+                sitemap[gradeName].unitNames.push(cur);
+              });
+            }
+            res();
+          }, i * 1000);
+        });
+      }),
+    );
+    return { promise, sitemap };
+  }
 }
