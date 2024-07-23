@@ -26,6 +26,7 @@ export default class MenuPageModel extends GenericPageModel {
   }
 
   async selectMenu(selector, number) {
+    await this.wait(selector);
     const dropdownMenu = await this.click(selector, null, {
       ...this.config.customOptions,
       number: number || 0,
@@ -80,31 +81,52 @@ export default class MenuPageModel extends GenericPageModel {
     const sidebarItems = await sidebar.$$(
       "xpath/.//div[@class[contains(.,'ant-collapse-item')]]",
     );
+
+    let activePromises = 0; // apple a lock mechanism
+
     const promise = await Promise.all(
+      /* These promises should resolve sequentially;
+       * therefore, can't predefine then iterate */
       sidebarItems.map((cur, i) => {
-        return new Promise((res) => {
-          setTimeout(async () => {
-            const outerHTML = await cur.evaluate((e) => e.outerHTML);
-            if (outerHTML.includes("active") == false) await cur.click();
+        return new Promise(async (res) => {
+          while (activePromises > 0) {
+            await this.timeout();
+          }
 
-            await cur.waitForSelector("xpath/.//*[@class='ant-tag']", {
-              visible: true,
-            });
-            const unitHandles = await cur.$$(
-              "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]",
-            );
+          activePromises++; // lock
 
-            const unitNames = await Promise.all(
-              unitHandles.map(async (cur) => {
-                return await (
-                  await cur.$("xpath/.//ancestor::div[@class='unit-title']")
-                ).evaluate((e) => e.innerText.split(":")[1]);
-              }),
-            );
+          const outerHTML = await cur.evaluate((e) => e.outerHTML);
+          if (outerHTML.includes("active") == false) await cur.click();
 
-            // print each handle to console
-            //
-            /* await Promise.all(
+          await cur.waitForSelector("xpath/.//*[@class='ant-tag']", {
+            visible: true,
+          });
+          const unitHandles = await cur.$$(
+            "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]",
+          );
+
+          const unitNames = await Promise.all(
+            unitHandles.map(async (cur) => {
+              return await (
+                await cur.$("xpath/.//ancestor::div[@class='unit-title']")
+              ).evaluate((e) => e.innerText.split(":")[1]);
+            }),
+          );
+
+          await (async () => {
+            for (let unitHandle of unitHandles) {
+              await unitHandle.click();
+              const courses_xpath =
+                "xpath/.//div[@class[contains(., 'lesson-card')]]";
+              await this.wait(courses_xpath);
+              const courseHandles = await this.page.$$(courses_xpath);
+              console.log(courseHandles.length);
+            }
+          })();
+
+          // print each handle to console
+          //
+          /* await Promise.all(
               unitHandles.map((cur, i) => {
                 return new Promise((res) => {
                   setTimeout(
@@ -118,30 +140,32 @@ export default class MenuPageModel extends GenericPageModel {
               }),
             ); */
 
-            const gradeNames = (
-              await Promise.all(
-                unitHandles.map((cur) => cur.evaluate((e) => e.innerText)),
-              )
-            ).filter((cur, i, self) => {
-              return self.slice(i + 1).find((n) => n === cur) ? false : true;
-            });
+          const gradeNames = (
+            await Promise.all(
+              unitHandles.map((cur) => cur.evaluate((e) => e.innerText)),
+            )
+          ).filter((cur, i, self) => {
+            return self.slice(i + 1).find((n) => n === cur) ? false : true;
+          });
 
-            gradeNames.forEach((grade) => {
-              Object.assign(sitemap, {
-                [grade]: { unitHandles: [], unitNames: [] },
-              });
+          gradeNames.forEach((grade) => {
+            Object.assign(sitemap, {
+              [grade]: { unitHandles: [], unitNames: [] },
             });
+          });
 
-            for (const gradeName of gradeNames) {
-              unitHandles.forEach((cur) => {
-                sitemap[gradeName].unitHandles.push(cur);
-              });
-              unitNames.forEach((cur) => {
-                sitemap[gradeName].unitNames.push(cur);
-              });
-            }
-            res();
-          }, i * 1000);
+          for (const gradeName of gradeNames) {
+            unitHandles.forEach((cur) => {
+              sitemap[gradeName].unitHandles.push(cur);
+            });
+            unitNames.forEach((cur) => {
+              sitemap[gradeName].unitNames.push(cur);
+            });
+          }
+
+          activePromises--; // unlock
+
+          res();
         });
       }),
     );

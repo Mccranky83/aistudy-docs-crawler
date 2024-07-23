@@ -8,7 +8,10 @@ export default async () => {
   const loginPageModel = new LoginPageModel(page, config);
 
   const waitForFullRender = new Promise((res) => {
-    page.on("load", res);
+    page.on("load", async () => {
+      await loginPageModel.timeout();
+      res();
+    });
   });
   loginPageModel.go();
   await waitForFullRender;
