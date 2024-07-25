@@ -19,7 +19,7 @@ export default {
         hasTouch: false,
       },
     },
-    gotoOptions: { waitUntil: "load" },
+    goOptions: { waitUntil: "load" },
     clickOptions: {
       button: "left",
       clickCount: 1,

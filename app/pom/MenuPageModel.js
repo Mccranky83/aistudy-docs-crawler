@@ -6,12 +6,10 @@ export default class MenuPageModel extends GenericPageModel {
     this.menuOptions = this.config.menuOptions;
   }
 
-  // async getCourseMenu() {
-  //   const confirm_btn_xpath = "xpath/.//span[contains(text(), '确 定')]/..";
-  //   await this.page.waitForSelector(confirm_btn_xpath);
-  //   return await this.page.$$(confirm_btn_xpath);
-  // }
-
+  /**
+   * Both reselectCourses and expandGradeScope can cause involuntary page refresh,
+   * which also removes elements from the DOM :(
+   */
   async reselectCourses() {
     const btn_xpath = "xpath/.//span[text()='重选课时']";
     const message = await this.page.$eval(btn_xpath, (button) => {
@@ -32,6 +30,11 @@ export default class MenuPageModel extends GenericPageModel {
       number: number || 0,
     });
     return dropdownMenu;
+  }
+
+  async reload() {
+    const close = await this.wait("xpath/.//div[text()='选择课时']/../button");
+    await close.click();
   }
 
   async expandGradeScope() {
@@ -69,25 +72,93 @@ export default class MenuPageModel extends GenericPageModel {
       ? await this.navigateDropdown(number)
       : await this.page.keyboard.press("Enter");
 
-    await Promise.all([this.search(), this.timeout()]);
     await this.click("xpath/.//*[text()[contains(.,'共享课程')]]");
+    await this.timeout(0.5);
+    await this.search();
   }
 
-  async populateMapWithUnits() {
-    let sitemap = {};
+  async getSidebarItems() {
     const sidebar = await this.page.$(
       "xpath/.//div[@class='ant-layout-sider-children']",
     );
     const sidebarItems = await sidebar.$$(
       "xpath/.//div[@class[contains(.,'ant-collapse-item')]]",
     );
+    return sidebarItems;
+  }
+
+  async getUnitElements(sidebarItem) {
+    await this.clickSidebarItem(sidebarItem);
+    await sidebarItem.waitForSelector("xpath/.//*[@class='ant-tag']", {
+      visible: true,
+    });
+    const unitHandles = await sidebarItem.$$(
+      "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]",
+    );
+
+    const unitNames = await Promise.all(
+      unitHandles.map(async (cur) => {
+        return await (
+          await cur.$("xpath/.//ancestor::div[@class='unit-title']")
+        ).evaluate((e) => e.innerText.split(":")[1]);
+      }),
+    );
+
+    const gradeNames = (
+      await Promise.all(
+        unitHandles.map((cur) => cur.evaluate((e) => e.innerText)),
+      )
+    ).filter((cur, i, self) => {
+      return self.slice(i + 1).find((n) => n === cur) ? false : true;
+    });
+
+    return { unitHandles, unitNames, gradeNames };
+  }
+
+  async getCourseElements(unitHandle) {
+    await unitHandle.click();
+    const courses_xpath = "xpath/.//div[@class[contains(., 'lesson-card')]]";
+    await this.wait(courses_xpath);
+    const courseHandles = await this.page.$$(courses_xpath);
+    const courseNames = await Promise.all(
+      courseHandles.map((cur) => {
+        return new Promise(async (res) => {
+          res(
+            (await cur.$("xpath/.//span[@class='editable-span']")).evaluate(
+              (e) => e.innerText,
+            ),
+          );
+        });
+      }),
+    );
+    return { courseHandles, courseNames };
+  }
+
+  async clickSidebarItem(sidebarItem) {
+    const outerHTML = await sidebarItem.evaluate((e) => e.outerHTML);
+    if (outerHTML.includes("active") == false) await sidebarItem.click();
+  }
+
+  async populateMapWithUnits() {
+    let sitemap = {};
 
     let activePromises = 0; // apple a lock mechanism
 
-    const promise = await Promise.all(
-      /* These promises should resolve sequentially;
-       * therefore, can't predefine then iterate */
-      sidebarItems.map((cur, i) => {
+    await this.page.waitForNetworkIdle({ idleTime: 300 });
+    await this.reselectCourses();
+
+    await this.timeout();
+    await this.expandGradeScope();
+
+    await this.timeout();
+    const sidebarItems = await this.getSidebarItems();
+
+    await Promise.all(
+      /**
+       * These promises should resolve sequentially;
+       * therefore, can't predefine then iterate
+       */
+      sidebarItems.map((cur) => {
         return new Promise(async (res) => {
           while (activePromises > 0) {
             await this.timeout();
@@ -95,72 +166,25 @@ export default class MenuPageModel extends GenericPageModel {
 
           activePromises++; // lock
 
-          const outerHTML = await cur.evaluate((e) => e.outerHTML);
-          if (outerHTML.includes("active") == false) await cur.click();
-
-          await cur.waitForSelector("xpath/.//*[@class='ant-tag']", {
-            visible: true,
-          });
-          const unitHandles = await cur.$$(
-            "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]",
-          );
-
-          const unitNames = await Promise.all(
-            unitHandles.map(async (cur) => {
-              return await (
-                await cur.$("xpath/.//ancestor::div[@class='unit-title']")
-              ).evaluate((e) => e.innerText.split(":")[1]);
-            }),
-          );
-
-          await (async () => {
-            for (let unitHandle of unitHandles) {
-              await unitHandle.click();
-              const courses_xpath =
-                "xpath/.//div[@class[contains(., 'lesson-card')]]";
-              await this.wait(courses_xpath);
-              const courseHandles = await this.page.$$(courses_xpath);
-              console.log(courseHandles.length);
-            }
-          })();
-
-          // print each handle to console
-          //
-          /* await Promise.all(
-              unitHandles.map((cur, i) => {
-                return new Promise((res) => {
-                  setTimeout(
-                    async () => {
-                      console.log(await cur.evaluate((e) => e.innerText));
-                      res();
-                    },
-                    (i + 1) * 50,
-                  );
-                });
-              }),
-            ); */
-
-          const gradeNames = (
-            await Promise.all(
-              unitHandles.map((cur) => cur.evaluate((e) => e.innerText)),
-            )
-          ).filter((cur, i, self) => {
-            return self.slice(i + 1).find((n) => n === cur) ? false : true;
-          });
+          const { unitHandles, unitNames, gradeNames } =
+            await this.getUnitElements(cur);
 
           gradeNames.forEach((grade) => {
             Object.assign(sitemap, {
-              [grade]: { unitHandles: [], unitNames: [] },
+              [grade]: { unitNames: [] },
             });
           });
 
+          // Refrain from using forEach as it runs operations in parallel
           for (const gradeName of gradeNames) {
-            unitHandles.forEach((cur) => {
-              sitemap[gradeName].unitHandles.push(cur);
-            });
-            unitNames.forEach((cur) => {
-              sitemap[gradeName].unitNames.push(cur);
-            });
+            for (let unitHandle of unitHandles) {
+              const { courseNames } = await this.getCourseElements(unitHandle);
+              sitemap[gradeName].unitNames.push({
+                unitName: unitNames[unitHandles.indexOf(unitHandle)],
+                courseNames,
+                courseUrls: [],
+              });
+            }
           }
 
           activePromises--; // unlock
@@ -169,6 +193,65 @@ export default class MenuPageModel extends GenericPageModel {
         });
       }),
     );
-    return { promise, sitemap };
+    await this.timeout();
+    await this.reload();
+    return sitemap;
+  }
+
+  async getCourseUrls() {
+    const sitemap = await this.populateMapWithUnits();
+
+    const gradesIterator = async (sidebarIndex = 0) => {
+      const gradeLevel = Object.keys(sitemap);
+      if (sidebarIndex === gradeLevel.length) return;
+
+      const unitsIterator = async (unitIndex = 0) => {
+        const unitLevel = sitemap[gradeLevel[sidebarIndex]].unitNames;
+        if (unitIndex === unitLevel.length) return;
+
+        const coursesIterator = async (courseIndex = 0) => {
+          const courseLevel = unitLevel[unitIndex].courseNames;
+          if (courseIndex === courseLevel.length) return;
+
+          await this.page.waitForNetworkIdle({ idleTime: 100 });
+          await this.reselectCourses();
+
+          await this.timeout();
+          await this.expandGradeScope();
+
+          await this.page.waitForNetworkIdle({ idleTime: 100 });
+          const sidebarItem = (await this.getSidebarItems())[sidebarIndex];
+
+          const { unitHandles } = await this.getUnitElements(sidebarItem);
+
+          await this.timeout(0.1); // Wait for dropdown animation to finish
+
+          const unitHandle = await unitHandles[unitIndex];
+          const { courseHandles } = await this.getCourseElements(unitHandle);
+          const confirmButton = await courseHandles[courseIndex].$("button", {
+            visible: true,
+          });
+
+          await confirmButton.click();
+          await this.page.waitForNetworkIdle({ idleTime: 500 });
+          const downloadButton = await this.wait(
+            "xpath/.//a[@class='button-download']",
+          );
+          const courseUrl = await downloadButton.evaluate((e) =>
+            e.getAttribute("href"),
+          );
+
+          unitLevel[unitIndex].courseUrls.push(courseUrl); // Write to sitemap
+
+          await coursesIterator(courseIndex + 1);
+        };
+        await coursesIterator();
+        await unitsIterator(unitIndex + 1);
+      };
+      await unitsIterator();
+      await gradesIterator(sidebarIndex + 1);
+    };
+    await gradesIterator();
+    return sitemap;
   }
 }

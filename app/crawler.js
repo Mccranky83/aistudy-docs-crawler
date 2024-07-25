@@ -1,37 +1,21 @@
 import navigate from "./navigate.js";
 import MenuPageModel from "./pom/MenuPageModel.js";
 import config from "./config.js";
+import { promises as fs } from "node:fs";
 
 (async () => {
   const { browser, page } = await navigate();
   const menuPageModel = new MenuPageModel(page, config);
-  await page.waitForNetworkIdle({ idleTime: 500 });
-  await menuPageModel.reselectCourses();
 
-  await menuPageModel.timeout();
-  await menuPageModel.expandGradeScope();
+  const sitemap = await menuPageModel.getCourseUrls();
 
-  await menuPageModel.timeout();
-  const { sitemap } = await menuPageModel.populateMapWithUnits();
-  console.log(sitemap);
+  await fs
+    .writeFile("./sitemap.json", JSON.stringify(sitemap, null, 2), {
+      encoding: "utf-8",
+    })
+    .finally(() => {
+      console.log("\nSitemap has been saved.\n");
+    });
 
-  /* 
-
-  // Click each unit
-  for (const grade in sitemap) {
-    await Promise.all(
-      sitemap[grade].unitHandles.map(
-        (cur, i) =>
-          new Promise((res) => {
-            setTimeout(
-              () => {
-                cur.click(config.clickOptions);
-                res();
-              },
-              config.timeout * 0.5 * (i + 1),
-            );
-          }),
-      ),
-    );
-  } */
+  await browser.close();
 })();
