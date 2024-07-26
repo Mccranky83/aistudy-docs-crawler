@@ -3,8 +3,10 @@ import MenuPageModel from "./pom/MenuPageModel.js";
 import config from "./config.js";
 import { promises as fs } from "node:fs";
 
+const subjectIndex = 3;
+
 (async () => {
-  const { browser, page, filename } = await navigate();
+  const { browser, page, filename } = await navigate(subjectIndex);
   const menuPageModel = new MenuPageModel(page, config);
 
   const sitemap = await menuPageModel.populateSitemap();

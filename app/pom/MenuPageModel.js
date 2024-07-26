@@ -228,6 +228,8 @@ export default class MenuPageModel extends GenericPageModel {
               });
             } else {
               gradeNames.forEach((grade) => {
+                // gradeNames of either semester may not include all grades
+                if (!this.sitemap[grade]) this.sitemap[grade] = {};
                 this.sitemap[grade][semester] = { unitNames: [] };
               });
             }
@@ -237,11 +239,12 @@ export default class MenuPageModel extends GenericPageModel {
               for (let unitHandle of unitHandles) {
                 const { courseNames } =
                   await this.getCourseElements(unitHandle);
-                this.sitemap[gradeName][semester].unitNames.push({
-                  unitName: unitNames[unitHandles.indexOf(unitHandle)],
-                  courseNames,
-                  courseUrls: [],
-                });
+                this.sitemap[gradeName][semester] &&
+                  this.sitemap[gradeName][semester].unitNames.push({
+                    unitName: unitNames[unitHandles.indexOf(unitHandle)],
+                    courseNames,
+                    courseUrls: [],
+                  });
               }
             }
 
@@ -260,12 +263,18 @@ export default class MenuPageModel extends GenericPageModel {
   async populateSitemap() {
     const sitemap = await this.structureSitemap();
 
-    const semesterIterator = async (semesterIndex = 0) => {
+    const semesterIterator = async (semesterIndex = 1) => {
       const semesterLevel = this.semesters;
       if (semesterIndex === semesterLevel.length) return;
 
       const gradesIterator = async (sidebarIndex = 0) => {
         const gradeLevel = Object.keys(sitemap);
+        if (
+          Object.keys(gradeLevel[sidebarIndex]).includes(
+            semesterLevel[semesterIndex],
+          ) === false
+        )
+          return; // Skip if semester not found in current grade
         if (sidebarIndex === gradeLevel.length) return;
 
         const unitsIterator = async (unitIndex = 0) => {
