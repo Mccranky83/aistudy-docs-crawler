@@ -4,6 +4,7 @@ export default class MenuPageModel extends GenericPageModel {
   constructor(page, config) {
     super(page, config);
     this.menuOptions = this.config.menuOptions;
+    this.sitemap = {};
   }
 
   /**
@@ -20,7 +21,10 @@ export default class MenuPageModel extends GenericPageModel {
   }
 
   async search() {
-    await this.click("xpath/.//span[text()='检索']");
+    await Promise.all([
+      this.click("xpath/.//span[text()='检索']"),
+      this.page.waitForNetworkIdle({ idleTime: 300 }),
+    ]);
   }
 
   async selectMenu(selector, number) {
@@ -72,9 +76,41 @@ export default class MenuPageModel extends GenericPageModel {
       ? await this.navigateDropdown(number)
       : await this.page.keyboard.press("Enter");
 
-    await this.click("xpath/.//*[text()[contains(.,'共享课程')]]");
-    await this.timeout(0.5);
+    /**
+     * Essential to press search before entering the shared courses panel
+     */
     await this.search();
+    await this.click("xpath/.//*[text()[contains(.,'共享课程')]]");
+  }
+
+  async selectSemester(semester) {
+    const menu_xpath = "xpath/.//span[@class='ant-form-item-children']";
+    const menu = await this.selectMenu(menu_xpath, 2);
+    const menu_label = await (
+      await menu.$("xpath/.//div[@class='ant-select-selection-selected-value']")
+    ).evaluate((e) => e.innerText.trim());
+
+    let number = undefined;
+    switch (menu_label[0]) {
+      case "上":
+        if (semester === "上") number = 0;
+        else number = 1;
+        break;
+      case "下":
+        if (semester === "下") number = 0;
+        else number = 2;
+        break;
+      case "全":
+        if (semester === "上") number = 1;
+        else number = 2;
+        break;
+      default:
+        break;
+    }
+
+    number
+      ? await this.navigateDropdown(number)
+      : await this.page.keyboard.press("Enter");
   }
 
   async getSidebarItems() {
@@ -116,6 +152,10 @@ export default class MenuPageModel extends GenericPageModel {
   }
 
   async getCourseElements(unitHandle) {
+    /**
+     * Without this timeout, the second iteration will fail
+     */
+    await this.timeout(0.05); // Wait for unitHandle to be visible
     await unitHandle.click();
     const courses_xpath = "xpath/.//div[@class[contains(., 'lesson-card')]]";
     await this.wait(courses_xpath);
@@ -139,67 +179,80 @@ export default class MenuPageModel extends GenericPageModel {
     if (outerHTML.includes("active") == false) await sidebarItem.click();
   }
 
-  async populateMapWithUnits() {
-    let sitemap = {};
+  async structureSitemap() {
+    const semesters = ["上", "下"];
 
-    let activePromises = 0; // apple a lock mechanism
+    let activePromises = 0; // apply a lock mechanism
 
-    await this.page.waitForNetworkIdle({ idleTime: 300 });
-    await this.reselectCourses();
+    for (let semester of semesters) {
+      await this.page.waitForNetworkIdle({ idleTime: 300 });
+      await this.reselectCourses();
 
-    await this.timeout();
-    await this.expandGradeScope();
+      await this.timeout();
+      await this.selectSemester(semester);
+      await this.expandGradeScope();
 
-    await this.timeout();
-    const sidebarItems = await this.getSidebarItems();
+      const sidebarItems = await this.getSidebarItems();
 
-    await Promise.all(
-      /**
-       * These promises should resolve sequentially;
-       * therefore, can't predefine then iterate
-       */
-      sidebarItems.map((cur) => {
-        return new Promise(async (res) => {
-          while (activePromises > 0) {
-            await this.timeout();
-          }
+      await Promise.all(
+        /**
+         * These promises should resolve sequentially;
+         * therefore, can't predefine then iterate
+         */
+        sidebarItems.map((cur) => {
+          return new Promise(async (res) => {
+            while (activePromises > 0) {
+              await this.timeout();
+            }
 
-          activePromises++; // lock
+            activePromises++; // lock
 
-          const { unitHandles, unitNames, gradeNames } =
-            await this.getUnitElements(cur);
+            const { unitHandles, unitNames, gradeNames } =
+              await this.getUnitElements(cur);
 
-          gradeNames.forEach((grade) => {
-            Object.assign(sitemap, {
-              [grade]: { unitNames: [] },
-            });
-          });
-
-          // Refrain from using forEach as it runs operations in parallel
-          for (const gradeName of gradeNames) {
-            for (let unitHandle of unitHandles) {
-              const { courseNames } = await this.getCourseElements(unitHandle);
-              sitemap[gradeName].unitNames.push({
-                unitName: unitNames[unitHandles.indexOf(unitHandle)],
-                courseNames,
-                courseUrls: [],
+            if (!semesters.indexOf(semester)) {
+              gradeNames.forEach((grade) => {
+                Object.assign(this.sitemap, {
+                  [grade]: {
+                    [semester]: {
+                      unitNames: [],
+                    },
+                  },
+                });
+              });
+            } else {
+              gradeNames.forEach((grade) => {
+                this.sitemap[grade][semester] = { unitNames: [] };
               });
             }
-          }
 
-          activePromises--; // unlock
+            // Refrain from using forEach as it runs operations in parallel
+            for (const gradeName of gradeNames) {
+              for (let unitHandle of unitHandles) {
+                const { courseNames } =
+                  await this.getCourseElements(unitHandle);
+                this.sitemap[gradeName][semester].unitNames.push({
+                  unitName: unitNames[unitHandles.indexOf(unitHandle)],
+                  courseNames,
+                  courseUrls: [],
+                });
+              }
+            }
 
-          res();
-        });
-      }),
-    );
-    await this.timeout();
-    await this.reload();
-    return sitemap;
+            activePromises--; // unlock
+
+            res();
+          });
+        }),
+      );
+      await this.timeout();
+      await this.reload();
+    }
+    return this.sitemap;
   }
 
-  async getCourseUrls() {
-    const sitemap = await this.populateMapWithUnits();
+  async populateSitemap() {
+    const sitemap = await this.structureSitemap();
 
     const gradesIterator = async (sidebarIndex = 0) => {
       const gradeLevel = Object.keys(sitemap);
@@ -243,6 +296,9 @@ export default class MenuPageModel extends GenericPageModel {
 
           unitLevel[unitIndex].courseUrls.push(courseUrl); // Write to sitemap
 
+          /**
+           * Keep the await keyword to prevent each iteration from running in parallel
+           */
           await coursesIterator(courseIndex + 1);
         };
         await coursesIterator();
