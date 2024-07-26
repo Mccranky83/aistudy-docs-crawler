@@ -192,6 +192,7 @@ export default class MenuPageModel extends GenericPageModel {
       await this.selectSemester(semester);
       await this.expandGradeScope();
 
+      await this.page.waitForNetworkIdle({ idleTime: 300 });
       const sidebarItems = await this.getSidebarItems();
 
       await Promise.all(
@@ -207,6 +208,7 @@ export default class MenuPageModel extends GenericPageModel {
 
             activePromises++; // lock
 
+            await this.timeout(0.5);
             const { unitHandles, unitNames, gradeNames } =
               await this.getUnitElements(cur);
 
@@ -245,7 +247,7 @@ export default class MenuPageModel extends GenericPageModel {
           });
         }),
       );
-      await this.timeout();
+      await this.timeout(0.1); // For smoother closing animation
       await this.reload();
     }
     return this.sitemap;
@@ -259,22 +261,23 @@ export default class MenuPageModel extends GenericPageModel {
       if (sidebarIndex === gradeLevel.length) return;
 
       const unitsIterator = async (unitIndex = 0) => {
-        const unitLevel = sitemap[gradeLevel[sidebarIndex]].unitNames;
+        const unitLevel = sitemap[gradeLevel[sidebarIndex]]["下"].unitNames;
         if (unitIndex === unitLevel.length) return;
 
         const coursesIterator = async (courseIndex = 0) => {
           const courseLevel = unitLevel[unitIndex].courseNames;
           if (courseIndex === courseLevel.length) return;
 
-          await this.page.waitForNetworkIdle({ idleTime: 100 });
+          await this.page.waitForNetworkIdle({ idleTime: 300 });
           await this.reselectCourses();
 
           await this.timeout();
           await this.expandGradeScope();
 
-          await this.page.waitForNetworkIdle({ idleTime: 100 });
+          await this.page.waitForNetworkIdle({ idleTime: 300 });
           const sidebarItem = (await this.getSidebarItems())[sidebarIndex];
 
+          await this.timeout(0.5);
           const { unitHandles } = await this.getUnitElements(sidebarItem);
 
           await this.timeout(0.1); // Wait for dropdown animation to finish
@@ -299,7 +302,7 @@ export default class MenuPageModel extends GenericPageModel {
           /**
            * Keep the await keyword to prevent each iteration from running in parallel
            */
-          await coursesIterator(courseIndex + 1);
+          await coursesIterator(courseIndex + courseLevel.length); // alter
         };
         await coursesIterator();
         await unitsIterator(unitIndex + 1);
