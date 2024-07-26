@@ -5,6 +5,10 @@ export default class MenuPageModel extends GenericPageModel {
     super(page, config);
     this.menuOptions = this.config.menuOptions;
     this.sitemap = {};
+    /**
+     * For unknown reasons, 下 has to be placed before 上
+     */
+    this.semesters = ["下", "上"];
   }
 
   /**
@@ -13,6 +17,7 @@ export default class MenuPageModel extends GenericPageModel {
    */
   async reselectCourses() {
     const btn_xpath = "xpath/.//span[text()='重选课时']";
+    await this.wait("xpath/.//span[text()='重选课时']");
     const message = await this.page.$eval(btn_xpath, (button) => {
       button.click();
       return `${button.innerText || "Component"} successfully loaded...`;
@@ -77,7 +82,8 @@ export default class MenuPageModel extends GenericPageModel {
       : await this.page.keyboard.press("Enter");
 
     /**
-     * Essential to press search before entering the shared courses panel
+     * Press search before entering shared courses panel
+     * No need to follow up with more delays
      */
     await this.search();
     await this.click("xpath/.//*[text()[contains(.,'共享课程')]]");
@@ -158,7 +164,6 @@ export default class MenuPageModel extends GenericPageModel {
     await this.timeout(0.05); // Wait for unitHandle to be visible
     await unitHandle.click();
     const courses_xpath = "xpath/.//div[@class[contains(., 'lesson-card')]]";
-    await this.wait(courses_xpath);
     const courseHandles = await this.page.$$(courses_xpath);
     const courseNames = await Promise.all(
       courseHandles.map((cur) => {
@@ -180,7 +185,7 @@ export default class MenuPageModel extends GenericPageModel {
   }
 
   async structureSitemap() {
-    const semesters = ["上", "下"];
+    const semesters = this.semesters;
 
     let activePromises = 0; // apply a lock mechanism
 
@@ -188,11 +193,11 @@ export default class MenuPageModel extends GenericPageModel {
       await this.page.waitForNetworkIdle({ idleTime: 300 });
       await this.reselectCourses();
 
-      await this.timeout();
+      await this.page.waitForNetworkIdle({ idleTime: 300 });
       await this.selectSemester(semester);
       await this.expandGradeScope();
 
-      await this.page.waitForNetworkIdle({ idleTime: 300 });
+      // No need to wait for network idle here
       const sidebarItems = await this.getSidebarItems();
 
       await Promise.all(
@@ -203,12 +208,11 @@ export default class MenuPageModel extends GenericPageModel {
         sidebarItems.map((cur) => {
           return new Promise(async (res) => {
             while (activePromises > 0) {
-              await this.timeout();
+              await this.timeout(); // Put on hold until the lock is released
             }
 
             activePromises++; // lock
 
-            await this.timeout(0.5);
             const { unitHandles, unitNames, gradeNames } =
               await this.getUnitElements(cur);
 
@@ -256,61 +260,78 @@ export default class MenuPageModel extends GenericPageModel {
   async populateSitemap() {
     const sitemap = await this.structureSitemap();
 
-    const gradesIterator = async (sidebarIndex = 0) => {
-      const gradeLevel = Object.keys(sitemap);
-      if (sidebarIndex === gradeLevel.length) return;
+    const semesterIterator = async (semesterIndex = 0) => {
+      const semesterLevel = this.semesters;
+      if (semesterIndex === semesterLevel.length) return;
 
-      const unitsIterator = async (unitIndex = 0) => {
-        const unitLevel = sitemap[gradeLevel[sidebarIndex]]["下"].unitNames;
-        if (unitIndex === unitLevel.length) return;
+      const gradesIterator = async (sidebarIndex = 0) => {
+        const gradeLevel = Object.keys(sitemap);
+        if (sidebarIndex === gradeLevel.length) return;
 
-        const coursesIterator = async (courseIndex = 0) => {
-          const courseLevel = unitLevel[unitIndex].courseNames;
-          if (courseIndex === courseLevel.length) return;
+        const unitsIterator = async (unitIndex = 0) => {
+          const unitLevel =
+            sitemap[gradeLevel[sidebarIndex]][semesterLevel[semesterIndex]]
+              .unitNames;
+          if (unitIndex === unitLevel.length) return;
 
-          await this.page.waitForNetworkIdle({ idleTime: 300 });
-          await this.reselectCourses();
+          const coursesIterator = async (courseIndex = 0) => {
+            const courseLevel = unitLevel[unitIndex].courseNames;
+            if (courseIndex === courseLevel.length) return;
 
-          await this.timeout();
-          await this.expandGradeScope();
+            await this.page.waitForNetworkIdle({ idleTime: 300 });
+            await this.reselectCourses();
 
-          await this.page.waitForNetworkIdle({ idleTime: 300 });
-          const sidebarItem = (await this.getSidebarItems())[sidebarIndex];
+            await this.page.waitForNetworkIdle({ idleTime: 300 });
+            await this.selectSemester(this.semesters[semesterIndex]);
+            await this.expandGradeScope();
 
-          await this.timeout(0.5);
-          const { unitHandles } = await this.getUnitElements(sidebarItem);
+            // No need to wait for network idle here
+            const sidebarItem = (await this.getSidebarItems())[sidebarIndex];
 
-          await this.timeout(0.1); // Wait for dropdown animation to finish
+            const { unitHandles } = await this.getUnitElements(sidebarItem);
 
-          const unitHandle = await unitHandles[unitIndex];
-          const { courseHandles } = await this.getCourseElements(unitHandle);
-          const confirmButton = await courseHandles[courseIndex].$("button", {
-            visible: true,
-          });
+            await this.timeout(0.1); // Wait for dropdown animation to finish
 
-          await confirmButton.click();
-          await this.page.waitForNetworkIdle({ idleTime: 500 });
-          const downloadButton = await this.wait(
-            "xpath/.//a[@class='button-download']",
-          );
-          const courseUrl = await downloadButton.evaluate((e) =>
-            e.getAttribute("href"),
-          );
+            const unitHandle = await unitHandles[unitIndex];
+            const { courseHandles } = await this.getCourseElements(unitHandle);
+            const confirmButton = await courseHandles[courseIndex].$("button", {
+              visible: true,
+            });
+            await confirmButton.click();
 
-          unitLevel[unitIndex].courseUrls.push(courseUrl); // Write to sitemap
+            await this.page.waitForNetworkIdle({ idleTime: 300 });
+            /**
+             * Note that some units don't have download buttons
+             */
+            let courseUrl = "";
+            try {
+              courseUrl = await (
+                await this.page.waitForSelector(
+                  "xpath/.//a[@class='button-download']",
+                  { timeout: 1000 },
+                )
+              ).evaluate((e) => e.getAttribute("href"));
+            } catch (e) {
+              console.error(e.message);
+            }
+            unitLevel[unitIndex].courseUrls.push(courseUrl); // Write to sitemap
 
-          /**
-           * Keep the await keyword to prevent each iteration from running in parallel
-           */
-          await coursesIterator(courseIndex + courseLevel.length); // alter
+            /**
+             * Keep the await keyword to prevent each iteration from running in parallel
+             */
+            await coursesIterator(courseIndex + 1);
+            // await coursesIterator(courseIndex + courseLevel.length); // For debugging
+          };
+          await coursesIterator();
+          await unitsIterator(unitIndex + 1);
         };
-        await coursesIterator();
-        await unitsIterator(unitIndex + 1);
+        await unitsIterator();
+        await gradesIterator(sidebarIndex + 1);
       };
-      await unitsIterator();
-      await gradesIterator(sidebarIndex + 1);
+      await gradesIterator();
+      await semesterIterator(semesterIndex + 1);
     };
-    await gradesIterator();
+    await semesterIterator();
     return sitemap;
   }
 }

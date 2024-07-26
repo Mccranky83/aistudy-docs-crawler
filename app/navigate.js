@@ -2,6 +2,8 @@ import login from "./login.js";
 import MenuPageModel from "./pom/MenuPageModel.js";
 import config from "./config.js";
 
+const subjectNumber = 1;
+
 export default async () => {
   const { browser, page, loginPageModel } = await login();
   const pageModel = new MenuPageModel(page, config);
@@ -25,6 +27,13 @@ export default async () => {
   const subjects = await page.$$(
     "xpath/.//div[@id='blk_modal_bkzs']//a[contains(@href, 'dolearning')]",
   );
+  const subjectNames = await Promise.all(
+    subjects.map((cur) => {
+      return new Promise(async (res) => {
+        res(await cur.evaluate((e) => e.innerText));
+      });
+    }),
+  );
 
   // Navigate to new page
   const [newPage] = await Promise.all([
@@ -33,14 +42,14 @@ export default async () => {
         browser.once("targetcreated", res(p));
       });
     }),
-    await subjects[0].click(),
+    await subjects[subjectNumber].click(),
   ]);
 
   const newPageModel = new MenuPageModel(newPage, config);
   await newPageModel.selectMenu(".ant-select-selection-selected-value");
 
   // Navigate the dropdown menu
-  await newPageModel.navigateDropdown(1);
+  await newPageModel.navigateDropdown(0); // altered
 
   await newPageModel
     .mouseClick("xpath/.//label[contains(@title, '选择注册机构')]")
@@ -50,5 +59,9 @@ export default async () => {
 
   console.log("\nThis ends the navigation phase...\n");
 
-  return { browser, page: newPage };
+  return {
+    browser,
+    page: newPage,
+    filename: `${subjectNames[subjectNumber]} - ${subjectNumber}`,
+  };
 };
