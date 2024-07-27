@@ -1,4 +1,5 @@
 import fs from "fs";
+import { join } from "node:path";
 
 export default {
   local: {
@@ -28,6 +29,15 @@ export default {
     customOptions: {
       visible: false,
       number: 0,
+    },
+    paths: {
+      data: "./data",
+      downloads: function () {
+        return join(this.data, "downloads");
+      },
+      sitemaps: function () {
+        return join(this.data, "sitemaps");
+      },
     },
   },
 }[process.env.TESTENV || "local"];

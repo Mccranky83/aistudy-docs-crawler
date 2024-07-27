@@ -2,6 +2,7 @@ import navigate from "./navigate.js";
 import MenuPageModel from "./pom/MenuPageModel.js";
 import config from "./config.js";
 import { promises as fs } from "node:fs";
+import path from "node:path";
 
 // PE (subjectIndex = 3) has mismatched gradeNames each semester
 const subjectIndex = 4;
@@ -15,7 +16,7 @@ const subjectIndex = 4;
 
   await fs
     .writeFile(
-      `./data/sitemaps/${filename}.json`,
+      path.join(config.paths.sitemaps(), `${filename}.json`),
       JSON.stringify(sitemap, null, 2),
       {
         encoding: "utf-8",

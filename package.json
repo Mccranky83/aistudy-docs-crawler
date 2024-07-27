@@ -2,7 +2,8 @@
   "name": "aistudy-docs-crawler",
   "version": "1.0.0",
   "scripts": {
-    "start": "node ./app/crawler.js"
+    "crawl": "node ./app/crawler.js",
+    "download": "node ./app/download.js"
   },
   "keywords": [],
   "author": "",
