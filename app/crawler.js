@@ -3,13 +3,15 @@ import MenuPageModel from "./pom/MenuPageModel.js";
 import config from "./config.js";
 import { promises as fs } from "node:fs";
 
-const subjectIndex = 3;
+// PE (subjectIndex = 3) has mismatched gradeNames each semester
+const subjectIndex = 4;
 
 (async () => {
   const { browser, page, filename } = await navigate(subjectIndex);
   const menuPageModel = new MenuPageModel(page, config);
 
-  const sitemap = await menuPageModel.populateSitemap();
+  let sitemap = await menuPageModel.structureSitemap();
+  sitemap = await menuPageModel.populateSitemap(sitemap);
 
   await fs
     .writeFile(

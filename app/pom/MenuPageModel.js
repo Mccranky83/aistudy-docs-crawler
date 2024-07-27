@@ -260,22 +260,15 @@ export default class MenuPageModel extends GenericPageModel {
     return this.sitemap;
   }
 
-  async populateSitemap() {
-    const sitemap = await this.structureSitemap();
+  // Doesn't support mismatched gradeNames
+  async populateSitemap(sitemap) {
+    const gradesIterator = async (sidebarIndex = 0) => {
+      const gradeLevel = Object.keys(sitemap);
+      if (sidebarIndex === gradeLevel.length) return;
 
-    const semesterIterator = async (semesterIndex = 1) => {
-      const semesterLevel = this.semesters;
-      if (semesterIndex === semesterLevel.length) return;
-
-      const gradesIterator = async (sidebarIndex = 0) => {
-        const gradeLevel = Object.keys(sitemap);
-        if (
-          Object.keys(gradeLevel[sidebarIndex]).includes(
-            semesterLevel[semesterIndex],
-          ) === false
-        )
-          return; // Skip if semester not found in current grade
-        if (sidebarIndex === gradeLevel.length) return;
+      const semesterIterator = async (semesterIndex = 0) => {
+        const semesterLevel = Object.keys(sitemap[gradeLevel[sidebarIndex]]);
+        if (semesterIndex === semesterLevel.length) return;
 
         const unitsIterator = async (unitIndex = 0) => {
           const unitLevel =
@@ -291,7 +284,7 @@ export default class MenuPageModel extends GenericPageModel {
             await this.reselectCourses();
 
             await this.page.waitForNetworkIdle({ idleTime: 300 });
-            await this.selectSemester(this.semesters[semesterIndex]);
+            await this.selectSemester(semesterLevel[semesterIndex]);
             await this.expandGradeScope();
 
             // No need to wait for network idle here
@@ -335,12 +328,12 @@ export default class MenuPageModel extends GenericPageModel {
           await unitsIterator(unitIndex + 1);
         };
         await unitsIterator();
-        await gradesIterator(sidebarIndex + 1);
+        await semesterIterator(semesterIndex + 1);
       };
-      await gradesIterator();
-      await semesterIterator(semesterIndex + 1);
+      await semesterIterator();
+      await gradesIterator(sidebarIndex + 1);
     };
-    await semesterIterator();
+    await gradesIterator();
     return sitemap;
   }
 }
