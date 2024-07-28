@@ -6,7 +6,7 @@ const filename = "美术 - 4.json";
 
 (async () => {
   const sitemapPath = config.paths.sitemaps();
-  const downloadPath = config.paths.downloads();
+  const downloadPath = config.paths.linkmaps();
   const sitemap = JSON.parse(
     await fs.readFile(`${sitemapPath}/${filename}`, {
       encoding: "utf-8",

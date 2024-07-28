@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "crawl": "node ./app/crawler.js",
-    "download": "node ./app/download.js"
+    "cleanup": "node ./app/cleanup.js"
   },
   "keywords": [],
   "author": "",

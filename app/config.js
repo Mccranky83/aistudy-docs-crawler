@@ -32,8 +32,8 @@ export default {
     },
     paths: {
       data: "./data",
-      downloads: function () {
-        return join(this.data, "downloads");
+      linkmaps: function () {
+        return join(this.data, "linkmaps");
       },
       sitemaps: function () {
         return join(this.data, "sitemaps");
