@@ -4,11 +4,8 @@ import config from "./config.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-// PE (subjectIndex = 3) has mismatched gradeNames each semester
-const subjectIndex = 4;
-
-(async () => {
-  const { browser, page, filename } = await navigate(subjectIndex);
+export default async (subjectIndex) => {
+  const { browser, page, sitemapName } = await navigate(subjectIndex);
   const menuPageModel = new MenuPageModel(page, config);
 
   let sitemap = await menuPageModel.structureSitemap();
@@ -16,15 +13,17 @@ const subjectIndex = 4;
 
   await fs
     .writeFile(
-      path.join(config.paths.sitemaps(), `${filename}.json`),
+      path.join(config.paths.sitemaps(), sitemapName),
       JSON.stringify(sitemap, null, 2),
       {
         encoding: "utf-8",
       },
     )
-    .finally(() => {
-      console.log("\nSitemap has been saved.\n");
+    .then(() => {
+      console.log("\nSitemap has been saved.");
     });
 
   await browser.close();
-})();
+
+  return sitemapName;
+};

@@ -1,4 +1,3 @@
-import fs from "fs";
 import { join } from "node:path";
 
 export default {
@@ -12,7 +11,6 @@ export default {
     launchOptions: {
       headless: false,
       product: "chrome",
-      userDataDir: `${fs.mkdtempSync("./profiles/profile_")}`,
       defaultViewport: {
         width: 1440,
         height: 900,
@@ -32,6 +30,7 @@ export default {
     },
     paths: {
       data: "./data",
+      profiles: "./profiles",
       linkmaps: function () {
         return join(this.data, "linkmaps");
       },

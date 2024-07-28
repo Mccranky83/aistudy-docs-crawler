@@ -2,13 +2,11 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import config from "./config.js";
 
-const filename = "美术 - 4.json";
-
-(async () => {
+export default async (sitemapName) => {
   const sitemapPath = config.paths.sitemaps();
-  const downloadPath = config.paths.linkmaps();
+  const linkmapsPath = config.paths.linkmaps();
   const sitemap = JSON.parse(
-    await fs.readFile(`${sitemapPath}/${filename}`, {
+    await fs.readFile(`${sitemapPath}/${sitemapName}`, {
       encoding: "utf-8",
     }),
   );
@@ -47,9 +45,13 @@ const filename = "美术 - 4.json";
     }),
   );
 
-  await fs.writeFile(
-    `${downloadPath}/${filename}`,
-    JSON.stringify(downloadMap, null, 2),
-    { encoding: "utf-8" },
-  );
-})();
+  await fs
+    .writeFile(
+      `${linkmapsPath}/${sitemapName}`,
+      JSON.stringify(downloadMap, null, 2),
+      { encoding: "utf-8" },
+    )
+    .then(() => {
+      console.log("\nLinkmaps has been saved.");
+    });
+};

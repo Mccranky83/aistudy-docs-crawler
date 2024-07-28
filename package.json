@@ -2,20 +2,20 @@
   "name": "aistudy-docs-crawler",
   "version": "1.0.0",
   "scripts": {
-    "crawl": "node ./app/crawler.js",
-    "cleanup": "node ./app/cleanup.js"
+    "start": "node ./app/start.js",
+    "download": "node ./app/download.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Mccranky83",
   "license": "ISC",
   "description": "",
   "type": "module",
   "dependencies": {
-    "jsdom": "^24.1.0",
-    "mocha": "^10.6.0",
-    "puppeteer": "^22.13.0"
+    "puppeteer": "^22.13.0",
+    "zx": "^8.1.4"
   },
   "devDependencies": {
-    "chai": "^5.1.1"
+    "chai": "^5.1.1",
+    "mocha": "^10.7.0"
   }
 }
