@@ -26,8 +26,12 @@ export default async (sitemapName) => {
     cd(fullDirPath);
     if (!json[pathName]) continue;
     else {
-      await $`curl -o ${filename}.docx ${json[pathName]}`;
+      try {
+        await $`curl -o ${filename}.docx --max-time 15 ${json[pathName]}`;
+      } catch (e) {
+        console.error(e.message);
+      }
     }
   }
-  console.log("Downloaded all files!");
+  console.log("\nDownloaded all files!");
 };

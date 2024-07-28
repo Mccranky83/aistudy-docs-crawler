@@ -5,10 +5,7 @@ export default class MenuPageModel extends GenericPageModel {
     super(page, config);
     this.menuOptions = this.config.menuOptions;
     this.sitemap = {};
-    /**
-     * For unknown reasons, 下 has to be placed before 上
-     */
-    this.semesters = ["下", "上"];
+    this.semesters = ["上", "下"];
   }
 
   /**
@@ -120,12 +117,13 @@ export default class MenuPageModel extends GenericPageModel {
   }
 
   async getSidebarItems() {
-    const sidebar = await this.page.$(
-      "xpath/.//div[@class='ant-layout-sider-children']",
-    );
-    const sidebarItems = await sidebar.$$(
-      "xpath/.//div[@class[contains(.,'ant-collapse-item')]]",
-    );
+    const sidebar_xpath = "xpath/.//div[@class='ant-layout-sider-children']";
+    await this.page.waitForSelector(sidebar_xpath);
+    const sidebar = await this.page.$(sidebar_xpath);
+    const sidebarItems_xpath =
+      "xpath/.//div[@class[contains(.,'ant-collapse-item')]]";
+    await this.page.waitForSelector(sidebarItems_xpath);
+    const sidebarItems = await sidebar.$$(sidebarItems_xpath);
     return sidebarItems;
   }
 
@@ -134,9 +132,9 @@ export default class MenuPageModel extends GenericPageModel {
     await sidebarItem.waitForSelector("xpath/.//*[@class='ant-tag']", {
       visible: true,
     });
-    const unitHandles = await sidebarItem.$$(
-      "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]",
-    );
+    const unitHandles_xpath =
+      "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]";
+    const unitHandles = await sidebarItem.$$(unitHandles_xpath);
 
     const unitNames = await Promise.all(
       unitHandles.map(async (cur) => {
@@ -164,6 +162,7 @@ export default class MenuPageModel extends GenericPageModel {
     await this.timeout(0.05); // Wait for unitHandle to be visible
     await unitHandle.click();
     const courses_xpath = "xpath/.//div[@class[contains(., 'lesson-card')]]";
+    await this.page.waitForSelector(courses_xpath);
     const courseHandles = await this.page.$$(courses_xpath);
     const courseNames = await Promise.all(
       courseHandles.map((cur) => {
