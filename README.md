@@ -10,6 +10,7 @@ This project encompasses a sophisticated web crawler engineered to systematicall
 ## Installation
 
 ```bash
+# Clone the repository
 npm i # Installs project dependencies, including compatible Chrome
 npm run start # Executes the start script, which runs `app/start.js`
 ```
