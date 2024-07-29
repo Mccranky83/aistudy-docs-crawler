@@ -1,6 +1,6 @@
 # AiStudy Documents Crawler
 
-<img src="https://www.researchgate.net/publication/338226442/figure/fig4/AS:852734349684736@1580319120217/Web-Crawler-Free-Icon-Available-from-Online-Web-Fonts.png" height="200" align="right"/>
+<img src="https://github.com/user-attachments/assets/078b8b2f-1069-4e8c-a0c5-ab66112c6794" height="150" align="right"/>
 
 This project encompasses a sophisticated web crawler engineered to systematically acquire educational resources from the [上海市中小学数字教学系统](https://sz-api.ai-study.net/).
 
@@ -36,3 +36,5 @@ sitemapName:
 </pre>
 
 ## Results
+
+![Screenshot 2024-07-29 at 17 48 43](https://github.com/user-attachments/assets/f516517a-6561-4987-a64a-800955339ebf)
