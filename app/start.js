@@ -21,7 +21,9 @@ import config from "./config.js";
     .trim()[0]
     ?.toLowerCase();
   if (choice_one === "c" || !choice_one) {
-    const subjectIndex = Number(await rl.question("subjectIndex [0-24]: "));
+    const subjectIndex = Number(
+      (await rl.question("subjectIndex [0-24]: ")).trim(),
+    );
     const sitemapName = await crawl(subjectIndex);
     await cleanup(sitemapName);
     const choice_two = (await rl.question("Download now? (Y/n) "))
@@ -31,6 +33,7 @@ import config from "./config.js";
       await download(sitemapName);
       process.exit(0);
     } else {
+      console.log("Exiting...");
       process.exit(0);
     }
   } else {

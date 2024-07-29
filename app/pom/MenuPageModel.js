@@ -67,6 +67,18 @@ export default class MenuPageModel extends GenericPageModel {
       case "五":
         number = 1;
         break;
+      case "六":
+        number = 4;
+        break;
+      case "七":
+        number = 3;
+        break;
+      case "八":
+        number = 2;
+        break;
+      case "九":
+        number = 1;
+        break;
       case "不":
         number = 0;
         break;
@@ -83,7 +95,10 @@ export default class MenuPageModel extends GenericPageModel {
      * No need to follow up with more delays
      */
     await this.search();
-    await this.click("xpath/.//*[text()[contains(.,'共享课程')]]");
+    await this.page.waitForNetworkIdle({ idleTime: 100 }); // Wait for search to finish
+    const sharedCourses_xpath = "xpath/.//*[text()[contains(.,'共享课程')]]";
+    await this.page.waitForSelector(sharedCourses_xpath, { timeout: 10_000 });
+    await this.click(sharedCourses_xpath);
   }
 
   async selectSemester(semester) {
@@ -118,11 +133,11 @@ export default class MenuPageModel extends GenericPageModel {
 
   async getSidebarItems() {
     const sidebar_xpath = "xpath/.//div[@class='ant-layout-sider-children']";
-    await this.page.waitForSelector(sidebar_xpath);
+    await this.page.waitForSelector(sidebar_xpath, { timeout: 10_000 });
     const sidebar = await this.page.$(sidebar_xpath);
     const sidebarItems_xpath =
       "xpath/.//div[@class[contains(.,'ant-collapse-item')]]";
-    await this.page.waitForSelector(sidebarItems_xpath);
+    await this.page.waitForSelector(sidebarItems_xpath, { timeout: 10_000 });
     const sidebarItems = await sidebar.$$(sidebarItems_xpath);
     return sidebarItems;
   }
@@ -131,6 +146,7 @@ export default class MenuPageModel extends GenericPageModel {
     await this.clickSidebarItem(sidebarItem);
     await sidebarItem.waitForSelector("xpath/.//*[@class='ant-tag']", {
       visible: true,
+      timeout: 10_000,
     });
     const unitHandles_xpath =
       "xpath/.//span[text()[contains(., '年级') and string-length(.) > string-length('年级')]]";
@@ -162,7 +178,7 @@ export default class MenuPageModel extends GenericPageModel {
     await this.timeout(0.05); // Wait for unitHandle to be visible
     await unitHandle.click();
     const courses_xpath = "xpath/.//div[@class[contains(., 'lesson-card')]]";
-    await this.page.waitForSelector(courses_xpath);
+    await this.page.waitForSelector(courses_xpath, { timeout: 10_000 });
     const courseHandles = await this.page.$$(courses_xpath);
     const courseNames = await Promise.all(
       courseHandles.map((cur) => {
@@ -279,49 +295,63 @@ export default class MenuPageModel extends GenericPageModel {
             const courseLevel = unitLevel[unitIndex].courseNames;
             if (courseIndex === courseLevel.length) return;
 
-            await this.page.waitForNetworkIdle({ idleTime: 300 });
-            await this.reselectCourses();
-
-            await this.page.waitForNetworkIdle({ idleTime: 300 });
-            await this.selectSemester(semesterLevel[semesterIndex]);
-            await this.expandGradeScope();
-
-            // No need to wait for network idle here
-            const sidebarItem = (await this.getSidebarItems())[sidebarIndex];
-
-            const { unitHandles } = await this.getUnitElements(sidebarItem);
-
-            await this.timeout(0.1); // Wait for dropdown animation to finish
-
-            const unitHandle = await unitHandles[unitIndex];
-            const { courseHandles } = await this.getCourseElements(unitHandle);
-            const confirmButton = await courseHandles[courseIndex].$("button", {
-              visible: true,
-            });
-            await confirmButton.click();
-
-            await this.page.waitForNetworkIdle({ idleTime: 300 });
-            /**
-             * Note that some units don't have download buttons
-             */
-            let courseUrl = "";
+            let sidebarTimeout = false;
             try {
-              courseUrl = await (
-                await this.page.waitForSelector(
-                  "xpath/.//a[@class='button-download']",
-                  { timeout: 1000 },
-                )
-              ).evaluate((e) => e.getAttribute("href"));
-            } catch (e) {
-              console.error(e.message);
-            }
-            unitLevel[unitIndex].courseUrls.push(courseUrl); // Write to sitemap
+              await this.page.waitForNetworkIdle({ idleTime: 300 });
+              await this.reselectCourses();
 
-            /**
-             * Keep the await keyword to prevent each iteration from running in parallel
-             */
-            await coursesIterator(courseIndex + 1);
-            // await coursesIterator(courseIndex + courseLevel.length); // For debugging
+              await this.page.waitForNetworkIdle({ idleTime: 300 });
+              await this.selectSemester(semesterLevel[semesterIndex]);
+              await this.expandGradeScope();
+
+              // No need to wait for network idle here
+
+              const sidebarItem = (await this.getSidebarItems())[sidebarIndex];
+              const { unitHandles } = await this.getUnitElements(sidebarItem);
+
+              await this.timeout(0.1); // Wait for dropdown animation to finish
+
+              const unitHandle = await unitHandles[unitIndex];
+              const { courseHandles } =
+                await this.getCourseElements(unitHandle);
+              const confirmButton = await courseHandles[courseIndex].$(
+                "button",
+                {
+                  visible: true,
+                },
+              );
+              await confirmButton.click();
+            } catch (e) {
+              sidebarTimeout = true;
+              console.log(e.message);
+              await coursesIterator(courseIndex); // Reiterate course cycle
+            }
+
+            if (!sidebarTimeout) {
+              await this.page.waitForNetworkIdle({ idleTime: 300 });
+              /**
+               * Note that some units don't have download buttons
+               */
+              let courseUrl;
+              try {
+                courseUrl = await (
+                  await this.page.waitForSelector(
+                    "xpath/.//a[@class='button-download']",
+                    { timeout: 1000 },
+                  )
+                ).evaluate((e) => e.getAttribute("href"));
+              } catch (e) {
+                courseUrl = "";
+                console.error(e.message);
+              }
+              unitLevel[unitIndex].courseUrls.push(courseUrl); // Write to sitemap
+
+              /**
+               * Keep the await keyword to prevent each iteration from running in parallel
+               */
+              await coursesIterator(courseIndex + 1);
+              // await coursesIterator(courseIndex + courseLevel.length); // For debugging
+            }
           };
           await coursesIterator();
           await unitsIterator(unitIndex + 1);

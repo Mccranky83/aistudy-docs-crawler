@@ -43,6 +43,11 @@ export default async (subjectIndex) => {
     await subjects[subjectIndex].click(),
   ]);
 
+  /**
+   * Ensure that the process is not cut off in high-latency networks
+   */
+  newPage.setDefaultTimeout(60_000);
+
   const newPageModel = new MenuPageModel(newPage, config);
   await newPageModel.selectMenu(".ant-select-selection-selected-value");
 
