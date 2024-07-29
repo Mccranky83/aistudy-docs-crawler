@@ -1,6 +1,6 @@
 # AiStudy Documents Crawler
 
-<img src="https://github.com/user-attachments/assets/078b8b2f-1069-4e8c-a0c5-ab66112c6794" height="150" align="right"/>
+<img src="https://github.com/user-attachments/assets/4b1bfcf1-8d6d-4844-8e74-c052b6282634" height="150" align="right"/>
 
 This project encompasses a sophisticated web crawler engineered to systematically acquire educational resources from the [上海市中小学数字教学系统](https://sz-api.ai-study.net/).
 
