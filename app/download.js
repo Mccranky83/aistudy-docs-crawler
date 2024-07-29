@@ -27,7 +27,10 @@ export default async (sitemapName) => {
     if (!json[pathName]) continue;
     else {
       try {
-        await $`curl -o ${filename}.docx --max-time 15 ${json[pathName]}`;
+        const url = json[pathName].split("?")[0];
+        const sections = url.split(".");
+        const ext = sections[sections.length - 1];
+        await $`curl -o ${filename}.${ext} --max-time 10 ${json[pathName]}`;
       } catch (e) {
         console.error(e.message);
       }
