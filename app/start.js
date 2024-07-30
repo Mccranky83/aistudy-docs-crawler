@@ -37,14 +37,30 @@ import config from "./config.js";
       process.exit(0);
     }
   } else {
-    console.log((await $`/bin/ls -C ${config.paths.linkmaps()}`).stdout.trim());
-    const sitemapName = (await rl.question("sitemapName: ")).trim();
+    let flag = true;
     try {
-      await download(sitemapName);
+      await $`test -d ${config.paths.linkmaps()}`;
     } catch (e) {
-      console.error(e.message);
-      process.exit(1);
+      flag = false;
+      const exitCode = e.exitCode;
+      echo`No linkmaps available!`;
+      process.exit(exitCode);
     }
-    process.exit(0);
+
+    if (flag) {
+      console.log(
+        (await $`/bin/ls -C ${config.paths.linkmaps()}`).stdout.trim(),
+      );
+      const sitemapName = (await rl.question("sitemapName: ")).trim();
+      /**
+       * Handle invalid input errors
+       */
+      try {
+        await download(sitemapName);
+      } catch (e) {
+        console.error(e.message);
+        process.exit(1);
+      }
+    }
   }
 })();
