@@ -22,11 +22,34 @@ import config from "./config.js";
     ?.toLowerCase();
   if (choice_one === "c" || !choice_one) {
     const subjectIndex = Number(
-      (await rl.question("subjectIndex [0-24]: ")).trim(),
+      (await rl.question("subjectIndex [1-25]: ")).trim(),
     );
-    const sitemapName = await crawl(subjectIndex);
+    try {
+      if (!subjectIndex) throw new Error("This field cannot be empty!");
+    } catch (e) {
+      console.error(e.message);
+      process.exit(1);
+    }
+
+    let downloadRange = {
+      grade: undefined,
+      semester: undefined,
+      unit: undefined,
+      course: undefined,
+    };
+    for (let i in downloadRange) {
+      let initIndex = (await rl.question(`Startup ${i} [Default: 0]: `)).trim();
+      initIndex = initIndex ? Number(initIndex) : 0;
+      /**
+       * Assign a robust default number to ensure `roof == count` always stands in rangeCheck
+       */
+      let offset = (await rl.question("Offset [Default: 100]: ")).trim();
+      offset = offset ? Number(offset) : 100;
+      downloadRange[i] = [initIndex, initIndex + offset];
+    }
+    const sitemapName = await crawl(subjectIndex - 1, downloadRange);
     await cleanup(sitemapName);
-    const choice_two = (await rl.question("Download now? (Y/n) "))
+    const choice_two = (await rl.question("\nDownload now? (Y/n) "))
       .trim()[0]
       ?.toLowerCase();
     if (choice_two === "y" || !choice_two) {

@@ -41,6 +41,7 @@ export default class MenuPageModel extends GenericPageModel {
   async reload() {
     const close = await this.wait("xpath/.//div[text()='选择课时']/../button");
     await close.click();
+    await this.page.reload(this.config.goOptions); // Reload page due to jammy dropdown buttons
   }
 
   async expandGradeScope() {
@@ -275,25 +276,60 @@ export default class MenuPageModel extends GenericPageModel {
     return this.sitemap;
   }
 
+  rangeCheck(section, index, level, lock) {
+    const count = level.length;
+    let roof = count;
+    // Implement a lock flag to reassign index variable the first time
+    !lock && section[0] < count && section[0] >= 0 && (index = section[0]);
+    // section[1] in range
+    section[1] <= count && section[1] > 0 && (roof = section[1]);
+    return [index, roof];
+  }
+
   // Doesn't support mismatched gradeNames
-  async populateSitemap(sitemap) {
-    const gradesIterator = async (sidebarIndex = 0) => {
+  async populateSitemap(sitemap, downloadRange) {
+    const { grade, semester, unit, course } = downloadRange;
+    const gradesIterator = async (initIndex = 0, lock = false) => {
       const gradeLevel = Object.keys(sitemap);
-      if (sidebarIndex === gradeLevel.length) return;
+      const [sidebarIndex, maxGrade] = this.rangeCheck(
+        grade,
+        initIndex,
+        gradeLevel,
+        lock,
+      );
+      if (sidebarIndex >= maxGrade) return;
 
-      const semesterIterator = async (semesterIndex = 0) => {
+      const semesterIterator = async (initIndex = 0, lock = false) => {
         const semesterLevel = Object.keys(sitemap[gradeLevel[sidebarIndex]]);
-        if (semesterIndex === semesterLevel.length) return;
+        const [semesterIndex, maxSemester] = this.rangeCheck(
+          semester,
+          initIndex,
+          semesterLevel,
+          lock,
+        );
+        if (semesterIndex >= maxSemester) return;
 
-        const unitsIterator = async (unitIndex = 0) => {
+        const unitsIterator = async (initIndex = 0, lock = false) => {
           const unitLevel =
             sitemap[gradeLevel[sidebarIndex]][semesterLevel[semesterIndex]]
               .unitNames;
-          if (unitIndex === unitLevel.length) return;
+          const [unitIndex, maxUnit] = this.rangeCheck(
+            unit,
+            initIndex,
+            unitLevel,
+            lock,
+          );
+          if (unitIndex >= maxUnit) return;
 
-          const coursesIterator = async (courseIndex = 0) => {
+          const coursesIterator = async (initIndex = 0, lock = false) => {
             const courseLevel = unitLevel[unitIndex].courseNames;
-            if (courseIndex === courseLevel.length) return;
+            const [courseIndex, maxCourse] = this.rangeCheck(
+              course,
+              initIndex,
+              courseLevel,
+              lock,
+            );
+            if (courseIndex >= maxCourse) return;
 
             let sidebarTimeout = false;
             try {
@@ -349,18 +385,18 @@ export default class MenuPageModel extends GenericPageModel {
               /**
                * Keep the await keyword to prevent each iteration from running in parallel
                */
-              await coursesIterator(courseIndex + 1);
+              await coursesIterator(courseIndex + 1, true);
               // await coursesIterator(courseIndex + courseLevel.length); // For debugging
             }
           };
           await coursesIterator();
-          await unitsIterator(unitIndex + 1);
+          await unitsIterator(unitIndex + 1, true);
         };
         await unitsIterator();
-        await semesterIterator(semesterIndex + 1);
+        await semesterIterator(semesterIndex + 1, true);
       };
       await semesterIterator();
-      await gradesIterator(sidebarIndex + 1);
+      await gradesIterator(sidebarIndex + 1, true);
     };
     await gradesIterator();
     return sitemap;
