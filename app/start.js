@@ -82,6 +82,7 @@ import config from "./config.js";
        */
       try {
         await download(sitemapName);
+        process.exit(0);
       } catch (e) {
         console.error(e.message);
         process.exit(1);
