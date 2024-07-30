@@ -22,8 +22,16 @@ npm run start # Executes the start script, which runs `app/start.js`
 <pre>
 prompt> npm run start
 
-Directly download or crawl first? (d/C)
-subjectIndex [0-24]:
+Directly download or crawl first? (d/C) 
+subjectIndex [1-25]: 1
+Startup grade [Default: 0]: 
+Offset [Default: 1]: 2
+Startup semester [Default: 0]: 1
+Offset [Default: 1]: 1
+Startup unit [Default: 0]: 2
+Offset [Default: 1]: 1000
+Startup course [Default: 0]: 
+Offset [Default: 1]: 
 </pre>
 
 **Direct download**
@@ -34,6 +42,15 @@ prompt> npm run start
 Directly download or crawl first? (d/C) d
 劳动 - 6.json
 sitemapName:
+</pre>
+
+**No available linkmaps**
+
+<pre>
+prompt> npm run start
+
+Directly download or crawl first? (d/C) d
+No linkmaps available!
 </pre>
 
 ## Results
