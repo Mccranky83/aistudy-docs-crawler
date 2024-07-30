@@ -200,8 +200,10 @@ export default class MenuPageModel extends GenericPageModel {
     if (outerHTML.includes("active") == false) await sidebarItem.click();
   }
 
-  async structureSitemap() {
-    const semesters = this.semesters;
+  async structureSitemap(downloadRange) {
+    const { grade, semester, unit, course } = downloadRange;
+    const semesterRange = this.rangeCheck(semester, 0, this.semesters);
+    const semesters = this.semesters.slice(...semesterRange);
 
     let activePromises = 0; // apply a lock mechanism
 
@@ -214,7 +216,9 @@ export default class MenuPageModel extends GenericPageModel {
       await this.expandGradeScope();
 
       // No need to wait for network idle here
-      const sidebarItems = await this.getSidebarItems();
+      let sidebarItems = await this.getSidebarItems();
+      const gradeRange = this.rangeCheck(grade, 0, sidebarItems);
+      sidebarItems = sidebarItems.slice(...gradeRange);
 
       await Promise.all(
         /**
@@ -229,8 +233,11 @@ export default class MenuPageModel extends GenericPageModel {
 
             activePromises++; // lock
 
-            const { unitHandles, unitNames, gradeNames } =
+            let { unitHandles, unitNames, gradeNames } =
               await this.getUnitElements(cur);
+            const unitRange = this.rangeCheck(unit, 0, unitHandles);
+            unitHandles = unitHandles.slice(...unitRange);
+            unitNames = unitNames.slice(...unitRange);
 
             if (!semesters.indexOf(semester)) {
               gradeNames.forEach((grade) => {
@@ -253,8 +260,9 @@ export default class MenuPageModel extends GenericPageModel {
             // Refrain from using forEach as it runs operations in parallel
             for (const gradeName of gradeNames) {
               for (let unitHandle of unitHandles) {
-                const { courseNames } =
-                  await this.getCourseElements(unitHandle);
+                let { courseNames } = await this.getCourseElements(unitHandle);
+                const courseRange = this.rangeCheck(course, 0, courseNames);
+                courseNames = courseNames.slice(...courseRange);
                 this.sitemap[gradeName][semester] &&
                   this.sitemap[gradeName][semester].unitNames.push({
                     unitName: unitNames[unitHandles.indexOf(unitHandle)],

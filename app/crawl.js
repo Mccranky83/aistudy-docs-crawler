@@ -8,7 +8,7 @@ export default async (subjectIndex, downloadRange) => {
   const { browser, page, sitemapName } = await navigate(subjectIndex);
   const menuPageModel = new MenuPageModel(page, config);
 
-  let sitemap = await menuPageModel.structureSitemap();
+  let sitemap = await menuPageModel.structureSitemap(downloadRange);
   sitemap = await menuPageModel.populateSitemap(sitemap, downloadRange);
 
   await fs
