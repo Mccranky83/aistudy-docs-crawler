@@ -44,8 +44,8 @@ import config from "./config.js";
       /**
        * Assign a robust offset to ensure `roof == count` always stands in rangeCheck
        */
-      let offset = (await rl.question("Offset [Default: 1]: ")).trim();
-      offset = offset ? Number(offset) : 1;
+      let offset = (await rl.question("Offset [Default: 100]: ")).trim();
+      offset = offset ? Number(offset) : 100;
       downloadRange[i] = [initIndex, initIndex + offset];
     }
 
