@@ -28,7 +28,7 @@ import config from "./config.js";
     (choice_two === "y" || !choice_two) && (headless = true);
 
     const subjectIndex = Number(
-      (await rl.question("subjectIndex [1-25]: ")).trim(),
+      (await rl.question("subjectIndex [1-17]: ")).trim(),
     );
     try {
       if (!subjectIndex) throw new Error("This field cannot be empty!");
