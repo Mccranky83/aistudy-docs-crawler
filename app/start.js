@@ -21,6 +21,12 @@ import config from "./config.js";
     .trim()[0]
     ?.toLowerCase();
   if (choice_one === "c" || !choice_one) {
+    const choice_two = (
+      await rl.question("Run in headless mode? (Y/n) ")
+    ).trim();
+    let headless = false;
+    (choice_two === "y" || !choice_two) && (headless = true);
+
     const subjectIndex = Number(
       (await rl.question("subjectIndex [1-25]: ")).trim(),
     );
@@ -49,12 +55,12 @@ import config from "./config.js";
       downloadRange[i] = [initIndex, initIndex + offset];
     }
 
-    const sitemapName = await crawl(subjectIndex - 1, downloadRange);
+    const sitemapName = await crawl(subjectIndex - 1, downloadRange, headless);
     await cleanup(sitemapName);
-    const choice_two = (await rl.question("\nDownload now? (Y/n) "))
+    const choice_three = (await rl.question("\nDownload now? (Y/n) "))
       .trim()[0]
       ?.toLowerCase();
-    if (choice_two === "y" || !choice_two) {
+    if (choice_three === "y" || !choice_three) {
       await download(sitemapName);
       process.exit(0);
     } else {

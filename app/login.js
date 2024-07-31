@@ -3,7 +3,7 @@ import config from "./config.js";
 import LoginPageModel from "./pom/LoginPageModel.js";
 import fs from "node:fs";
 
-export default async () => {
+export default async (headless) => {
   for (let i in config.paths) {
     fs.mkdirSync(
       typeof config.paths[i] === "string" ? config.paths[i] : config.paths[i](),
@@ -13,6 +13,7 @@ export default async () => {
   const launchOptions = {
     ...config.launchOptions,
     userDataDir: fs.mkdtempSync(`${config.paths.profiles}/profile_`),
+    headless,
   };
   const browser = await puppeteer.launch(launchOptions);
   const page = await browser.newPage();

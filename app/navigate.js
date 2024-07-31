@@ -2,8 +2,8 @@ import login from "./login.js";
 import MenuPageModel from "./pom/MenuPageModel.js";
 import config from "./config.js";
 
-export default async (subjectIndex) => {
-  const { browser, page, loginPageModel } = await login();
+export default async (subjectIndex, headless) => {
+  const { browser, page, loginPageModel } = await login(headless);
   const pageModel = new MenuPageModel(page, config);
 
   const waitForButtonToRender = new Promise((res) => {

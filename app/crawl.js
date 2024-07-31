@@ -4,8 +4,8 @@ import config from "./config.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-export default async (subjectIndex, downloadRange) => {
-  const { browser, page, sitemapName } = await navigate(subjectIndex);
+export default async (subjectIndex, downloadRange, headless) => {
+  const { browser, page, sitemapName } = await navigate(subjectIndex, headless);
   const menuPageModel = new MenuPageModel(page, config);
 
   let sitemap = await menuPageModel.structureSitemap(downloadRange);
