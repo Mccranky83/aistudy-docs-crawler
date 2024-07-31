@@ -65,6 +65,6 @@ export default async (subjectIndex, headless) => {
   return {
     browser,
     page: newPage,
-    sitemapName: `${subjectNames[subjectIndex]} - ${subjectIndex}.json`,
+    sitemapName: `${subjectNames[subjectIndex]} - ${subjectIndex + 1}.json`,
   };
 };

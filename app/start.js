@@ -57,9 +57,19 @@ import config from "./config.js";
 
     const sitemapName = await crawl(subjectIndex - 1, downloadRange, headless);
     await cleanup(sitemapName);
-    const choice_three = (await rl.question("\nDownload now? (Y/n) "))
-      .trim()[0]
-      ?.toLowerCase();
+
+    /**
+     * Automatically download if user doesn't respond within 1 minute
+     */
+    const signal = AbortSignal.timeout(60_000);
+    let choice_three = "y";
+    try {
+      choice_three = (await rl.question("\nDownload now? (Y/n) ", { signal }))
+        .trim()[0]
+        ?.toLowerCase();
+    } catch (e) {
+      console.error(e.message);
+    }
     if (choice_three === "y" || !choice_three) {
       await download(sitemapName);
       process.exit(0);
