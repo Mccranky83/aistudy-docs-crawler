@@ -37,6 +37,13 @@ import config from "./config.js";
       process.exit(1);
     }
 
+    const choice_three = (
+      await rl.question("Crawl documents or answer sheets? (D/a) ")
+    )
+      .trim()[0]
+      ?.toLowerCase();
+
+    const options = { choice_three, headless };
     let downloadRange = {
       grade: undefined,
       semester: undefined,
@@ -55,28 +62,32 @@ import config from "./config.js";
       downloadRange[i] = [initIndex, initIndex + offset];
     }
 
-    const sitemapName = await crawl(subjectIndex - 1, downloadRange, headless);
-    await cleanup(sitemapName);
+    const sitemapName = await crawl(subjectIndex - 1, downloadRange, options);
 
-    /**
-     * Automatically download if user doesn't respond within 1 minute
-     */
-    const signal = AbortSignal.timeout(60_000);
-    let choice_three = "y";
-    try {
-      choice_three = (await rl.question("\nDownload now? (Y/n) ", { signal }))
-        .trim()[0]
-        ?.toLowerCase();
-    } catch (e) {
-      console.error(e.message);
+    if (choice_three === "d" || !choice_three) {
+      await cleanup(sitemapName);
+      /**
+       * Automatically download if user doesn't respond within 1 minute
+       */
+      const signal = AbortSignal.timeout(60_000);
+      let choice_four = "y";
+      try {
+        choice_four = (await rl.question("\nDownload now? (Y/n) ", { signal }))
+          .trim()[0]
+          ?.toLowerCase();
+      } catch (e) {
+        console.error(e.message);
+      }
+      if (choice_four === "y" || !choice_four) {
+        await download(sitemapName);
+        process.exit(0);
+      } else {
+        console.log("Exiting...");
+        process.exit(0);
+      }
     }
-    if (choice_three === "y" || !choice_three) {
-      await download(sitemapName);
-      process.exit(0);
-    } else {
-      console.log("Exiting...");
-      process.exit(0);
-    }
+    console.log("Exiting...");
+    process.exit(0);
   } else {
     let flag = true;
     try {
