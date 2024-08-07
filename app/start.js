@@ -82,7 +82,7 @@ import config from "./config.js";
         await download(sitemapName);
         process.exit(0);
       } else {
-        console.log("Exiting...");
+        console.log("Documents not downloaded!\nExiting...");
         process.exit(0);
       }
     }

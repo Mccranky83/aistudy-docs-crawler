@@ -3,7 +3,6 @@ import GenericPageModel from "./GenericPageModel.js";
 export default class MenuPageModel extends GenericPageModel {
   constructor(page, config) {
     super(page, config);
-    this.menuOptions = this.config.menuOptions;
     this.sitemap = {};
     this.semesters = ["上", "下"];
   }
