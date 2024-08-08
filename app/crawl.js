@@ -39,6 +39,6 @@ export default async (
     await menuPageModel.gotoSharedResources();
 
     await page.waitForNetworkIdle({ idleTime: 300 });
-    await menuPageModel.structureFilePathname();
+    await menuPageModel.structureFilePathname(downloadRange);
   }
 };
