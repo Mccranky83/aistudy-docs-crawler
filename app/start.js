@@ -43,7 +43,16 @@ import config from "./config.js";
       .trim()[0]
       ?.toLowerCase();
 
-    const options = { choice_three, headless };
+    const tabIndex = Number((await rl.question("subjectIndex [1-2]: ")).trim());
+
+    try {
+      if (!tabIndex) throw new Error("This field cannot be empty!");
+    } catch (e) {
+      console.error(e.message);
+      process.exit(1);
+    }
+
+    const options = { choice_three, headless, tabIndex: tabIndex - 1 };
     let downloadRange = {
       grade: undefined,
       semester: undefined,

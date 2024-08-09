@@ -2,13 +2,13 @@ import navigate from "./navigate.js";
 import MenuPageModel from "./pom/MenuPageModel.js";
 import SecondMenuPageModel from "./pom/SecondMenuPageModel.js";
 import config from "./config.js";
-import { promises as fs } from "node:fs";
+import fsp from "node:fs/promises";
 import path from "node:path";
 
 export default async (
   subjectIndex,
   downloadRange,
-  { choice_three, headless },
+  { choice_three, headless, tabIndex },
 ) => {
   const { browser, page, sitemapName } = await navigate(subjectIndex, headless);
   const flag = choice_three === "d" || !choice_three;
@@ -17,10 +17,14 @@ export default async (
     : new SecondMenuPageModel(page, config);
 
   if (flag) {
-    let sitemap = await menuPageModel.structureSitemap(downloadRange);
-    sitemap = await menuPageModel.populateSitemap(sitemap, downloadRange);
+    let sitemap = await menuPageModel.structureSitemap(downloadRange, tabIndex);
+    sitemap = await menuPageModel.populateSitemap(
+      sitemap,
+      downloadRange,
+      tabIndex,
+    );
 
-    await fs
+    await fsp
       .writeFile(
         path.join(config.paths.sitemaps(), sitemapName),
         JSON.stringify(sitemap, null, 2),

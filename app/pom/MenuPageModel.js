@@ -194,12 +194,20 @@ export default class MenuPageModel extends GenericPageModel {
     return { courseHandles, courseNames };
   }
 
+  async clickTab(number) {
+    await this.page.waitForNetworkIdle({ idleTime: 300 });
+    const tab_xpath = "xpath/.//div[@class='ant-tabs-nav-scroll']//button";
+    await this.page.waitForSelector(tab_xpath);
+    const tab = (await this.page.$$(tab_xpath))[number || 0];
+    await tab.click();
+  }
+
   async clickSidebarItem(sidebarItem) {
     const outerHTML = await sidebarItem.evaluate((e) => e.outerHTML);
     if (outerHTML.includes("active") == false) await sidebarItem.click();
   }
 
-  async structureSitemap(downloadRange) {
+  async structureSitemap(downloadRange, number) {
     const { grade, semester, unit, course } = downloadRange;
     const semesterRange = this.rangeCheck(semester, 0, this.semesters);
     const semesters = this.semesters.slice(...semesterRange);
@@ -208,6 +216,7 @@ export default class MenuPageModel extends GenericPageModel {
 
     for (let semester of semesters) {
       await this.page.waitForNetworkIdle({ idleTime: 300 });
+      await this.clickTab(number);
       await this.reselectCourses();
 
       await this.page.waitForNetworkIdle({ idleTime: 300 });
@@ -294,7 +303,7 @@ export default class MenuPageModel extends GenericPageModel {
   }
 
   // Doesn't support mismatched gradeNames
-  async populateSitemap(sitemap, downloadRange) {
+  async populateSitemap(sitemap, downloadRange, number) {
     const { grade, semester, unit, course } = downloadRange;
     const gradesIterator = async (initIndex = 0, lock = false) => {
       const gradeLevel = Object.keys(sitemap);
@@ -341,6 +350,7 @@ export default class MenuPageModel extends GenericPageModel {
             let sidebarTimeout = false;
             try {
               await this.page.waitForNetworkIdle({ idleTime: 300 });
+              await this.clickTab(number);
               await this.reselectCourses();
 
               await this.page.waitForNetworkIdle({ idleTime: 300 });
