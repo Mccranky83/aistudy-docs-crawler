@@ -15,7 +15,7 @@ npm i # Installs project dependencies, including compatible Chrome
 npm run start # Executes the start script, which runs `app/start.js`
 ```
 
-## Example
+## Examples
 
 **Crawl first**
 
@@ -23,15 +23,18 @@ npm run start # Executes the start script, which runs `app/start.js`
 prompt> npm run start
 
 Directly download or crawl first? (d/C) 
-subjectIndex [1-25]: 1
+Run in headless mode? (Y/n) 
+subjectIndex [1-17]: 1
+Crawl documents or answer sheets? (D/a) 
+subjectIndex [1-2]: 1
 Startup grade [Default: 0]: 
-Offset [Default: 1]: 2
-Startup semester [Default: 0]: 1
-Offset [Default: 1]: 1
-Startup unit [Default: 0]: 2
-Offset [Default: 1]: 1000
+Offset [Default: 100]: 
+Startup semester [Default: 0]: 
+Offset [Default: 100]: 
+Startup unit [Default: 0]: 
+Offset [Default: 100]: 
 Startup course [Default: 0]: 
-Offset [Default: 1]: 
+Offset [Default: 100]: 
 </pre>
 
 **Direct download**
@@ -52,7 +55,3 @@ prompt> npm run start
 Directly download or crawl first? (d/C) d
 No linkmaps available!
 </pre>
-
-## Results
-
-![Screenshot 2024-07-29 at 17 48 43](https://github.com/user-attachments/assets/f516517a-6561-4987-a64a-800955339ebf)
