@@ -28,6 +28,16 @@ export default {
       visible: false,
       number: 0,
     },
+    curlFlags: [
+      "--speed-limit",
+      "300",
+      "--speed-time",
+      "5",
+      "--max-time",
+      "999999",
+      "--retry",
+      "3",
+    ],
     paths: {
       data: "./data",
       profiles: "./profiles",
