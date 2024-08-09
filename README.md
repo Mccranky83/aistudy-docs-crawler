@@ -7,6 +7,10 @@ This project encompasses a sophisticated web crawler engineered to systematicall
 > The crawler leverages Puppeteer, a Node.js library, to simulate human-like interactions with the Chromium browser, enabling the efficient extraction of download links.
 > Subsequently, the tool employs the `curl` command-line utility to facilitate the recursive downloading of these resources to the local system.
 
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/4d35e5d8-4cac-4031-99fc-99b8789df10b" />
+</div>
+
 ## Installation
 
 ```bash
