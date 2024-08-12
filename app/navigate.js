@@ -4,7 +4,6 @@ import config from "./config.js";
 
 export default async (subjectIndex, headless) => {
   const { browser, page, loginPageModel } = await login(headless);
-  let url = undefined;
   while (1) {
     // Faculty entrance
     await loginPageModel.click("#tab1", null, {

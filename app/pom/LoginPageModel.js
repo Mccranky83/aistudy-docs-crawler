@@ -8,6 +8,25 @@ export default class LoginPageModel extends GenericPageModel {
   async inputCredentials() {
     let credentials = this.config.credentials;
     for (const i in credentials) {
+      // Fire and forget
+      new Promise((res, rej) => {
+        this.page.on("dialog", (d) => {
+          setTimeout(async () => {
+            try {
+              await d.accept("");
+              res("\nUsing default credentials...\n");
+            } catch (e) {
+              rej("\nPrompt already closed...\n");
+            }
+          }, 3000);
+        });
+      })
+        .then((e) => console.log(e))
+        .catch((e) => console.error(e));
+      /**
+       * "" : default credentials
+       * null: user cancelled
+       */
       let input = await this.page.evaluate(
         (p) => window.prompt(p),
         `Enter ${i}:`,
