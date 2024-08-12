@@ -25,24 +25,18 @@ export default async (headless) => {
       res();
     });
   });
-  loginPageModel.go();
+  try {
+    await loginPageModel.go();
+  } catch (e) {
+    console.error(e.message);
+    await page.reload(config.goOptions);
+  }
   await waitForFullRender;
 
   // Hit the login button
   await loginPageModel.click("xpath/.//a[text()='登录']", null, {
     visible: true,
   });
-
-  // Faculty entrance
-  await loginPageModel.click("#tab1", null, {
-    ...config.customOptions,
-    visible: true,
-  });
-
-  await loginPageModel.inputCredentials();
-  await loginPageModel.slideToUnlock();
-
-  console.log("\nThis ends the login phase...\n");
 
   return { browser, page, loginPageModel };
 };

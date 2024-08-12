@@ -8,8 +8,15 @@ export default class LoginPageModel extends GenericPageModel {
   async inputCredentials() {
     let credentials = this.config.credentials;
     for (const i in credentials) {
+      let input = await this.page.evaluate(
+        (p) => window.prompt(p),
+        `Enter ${i}:`,
+      );
+      if (input === null)
+        throw new Error("\nUser cancelled the login process!");
+      input === "" && (input = credentials[i]);
       await this.wait(`#${i}`, { ...this.config.customOptions });
-      await this.page.type(`#${i}`, `${credentials[i]}`, { delay: 50 });
+      await this.page.type(`#${i}`, input, { delay: 50 });
     }
   }
 

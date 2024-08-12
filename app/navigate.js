@@ -4,17 +4,52 @@ import config from "./config.js";
 
 export default async (subjectIndex, headless) => {
   const { browser, page, loginPageModel } = await login(headless);
-  const pageModel = new MenuPageModel(page, config);
-
-  const waitForButtonToRender = new Promise((res) => {
-    page.on("response", (r) => {
-      if (r.request().resourceType() == "script") res();
+  let url = undefined;
+  while (1) {
+    // Faculty entrance
+    await loginPageModel.click("#tab1", null, {
+      ...config.customOptions,
+      visible: true,
     });
-  });
 
-  loginPageModel.click("#btn_submit"); // Submit
-  await waitForButtonToRender;
+    /**
+     * Exit if the user cancels login
+     */
+    const status_code = await loginPageModel.inputCredentials().catch((e) => {
+      console.log(e.message);
+      return 1;
+    });
+    status_code && (await page.close(), await browser.close(), process.exit(0));
 
+    await loginPageModel.slideToUnlock();
+
+    const promise = new Promise((res) => {
+      browser.on("targetchanged", () => {
+        res("targetchanged");
+      });
+    });
+    await loginPageModel.click("#btn_submit");
+    const error_message_xpath = "xpath/.//div[@class='error_message']";
+    const message = await Promise.race([
+      promise,
+      page.waitForSelector(error_message_xpath),
+    ]);
+    const error_number =
+      message === "targetchanged"
+        ? 0
+        : await message.evaluate((e) => e.children.length);
+    console.error(`\nError number: ${error_number}`);
+    if (error_number) {
+      console.error("\nIncorrect credentials, retrying...\n");
+      await page.goBack(config.goOptions);
+      continue;
+    } else {
+      console.log("\nLogin successful!\n");
+      break;
+    }
+  }
+
+  const pageModel = new MenuPageModel(page, config);
   await pageModel.mouseClick(
     "xpath/.//img[@src='common/i/icon-bkzs.jpg']",
     null,

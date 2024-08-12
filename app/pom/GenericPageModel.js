@@ -32,7 +32,7 @@ export default class PageModel {
   }
 
   async go() {
-    await this.page.goto(this.config.baseUrl, this.config.goOptions);
+    this.page.goto(this.config.baseUrl, this.config.goOptions);
   }
 
   async position(selector, customOptions) {
