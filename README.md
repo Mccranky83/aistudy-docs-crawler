@@ -2,6 +2,8 @@
 
 <img src="https://github.com/user-attachments/assets/4b1bfcf1-8d6d-4844-8e74-c052b6282634" height="150" align="right"/>
 
+> Due to the official notice that `本旧版过渡使用期至2025年7月31日`, I'm archiving this project.
+
 This project encompasses a sophisticated web crawler engineered to systematically acquire educational resources from the [上海市中小学数字教学系统](https://sz-api.ai-study.net/).
 
 > The crawler leverages Puppeteer, a Node.js library, to simulate human-like interactions with the Chromium browser, enabling the efficient extraction of download links.
